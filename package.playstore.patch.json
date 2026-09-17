@@ -1,0 +1,27 @@
+{
+  "_legal": "MAGIC BOOK POWERSPORTS — Création originale, conception et développement par Jonathan Labelle, PDG. Propriété intellectuelle exclusive de Jonathan Labelle / Magic app production.",
+  "version": "4.0.0",
+  "dependencies": {
+    "@capacitor/android": "8.5.1",
+    "@capacitor/browser": "8.0.4",
+    "@capacitor/core": "8.5.1",
+    "@revenuecat/purchases-capacitor": "13.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.1",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0"
+  },
+  "scripts": {
+    "build:android": "node scripts/build-capacitor.mjs",
+    "android:add": "npm run build:android && npx cap add android",
+    "android:sync": "npm run build:android && npx cap sync android",
+    "android:patch": "node scripts/patch-android.mjs",
+    "android:prepare": "npm run android:sync && npm run android:patch",
+    "android:open": "npm run android:prepare && npx cap open android",
+    "android:run": "npm run android:prepare && npx cap run android",
+    "android:aab": "node scripts/build-release.mjs AAB",
+    "android:apk": "node scripts/build-release.mjs APK",
+    "verify:playstore": "node scripts/verify-playstore.mjs"
+  }
+}
