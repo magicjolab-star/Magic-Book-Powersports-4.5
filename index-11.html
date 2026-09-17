@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#030b17">
+  <meta name="description" content="Magic App Production : outils SaaS, applications mobiles sur mesure et assistants IA pour numériser et optimiser vos processus d’affaires.">
+  <title>Magic App Production — Des solutions simples. Comme par magie.</title>
+
+  <!--
+    NETLIFY : placer ce fichier et les six fichiers médias dans le même dossier.
+    WIX : remplacer les src relatifs et le lien de secours de la vidéo
+    par les URL HTTPS publiques des fichiers correspondants.
+    GOOGLE PLAY : remplacer le lien de recherche par la fiche officielle.
+  -->
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #030b17;
+      --bg-deep: #020710;
+      --surface: #0b192b;
+      --white: #ffffff;
+      --text: #f2f6fc;
+      --muted: #bdcbdc;
+      --gold: #c8a46a;
+      --gold-light: #e8c991;
+      --cyan: #65dfff;
+      --border: rgba(153, 197, 226, 0.18);
+      --border-cyan: rgba(101, 223, 255, 0.38);
+      --border-gold: rgba(200, 164, 106, 0.45);
+      --radius: 24px;
+      --width: 1180px;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 24px; -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(24, 87, 126, 0.19), transparent 40%),
+        var(--bg);
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      overflow-wrap: break-word;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, p, figure, blockquote { margin: 0; }
+    h1, h2, h3 { line-height: 1.15; text-wrap: balance; }
+    a { color: inherit; text-decoration: none; }
+    img, video { display: block; max-width: 100%; }
+    img { height: auto; }
+    a:focus-visible, video:focus-visible { outline: 3px solid var(--cyan); outline-offset: 5px; }
+    ::selection { color: var(--bg-deep); background: var(--cyan); }
+    .container { width: min(var(--width), calc(100% - 48px)); margin-inline: auto; }
+    .section { padding-block: clamp(56px, 7vw, 96px); }
+    .eyebrow {
+      color: var(--cyan);
+      font-size: 0.73rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .glass {
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(16, 35, 57, 0.88), rgba(5, 16, 29, 0.9));
+      box-shadow: var(--shadow);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+    }
+    .skip-link {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 100;
+      padding: 12px 18px;
+      border-radius: 8px;
+      color: var(--bg-deep);
+      background: var(--cyan);
+      transform: translateY(-180%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    /* EN-TÊTE */
+    .site-header { border-bottom: 1px solid var(--border); background: rgba(3, 11, 23, 0.86); }
+    .header-inner {
+      display: flex;
+      min-height: 80px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding-block: 16px;
+    }
+    .wordmark { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; line-height: 1.2; }
+    .wordmark strong { color: var(--gold-light); font-size: 1.02rem; letter-spacing: 0.12em; }
+    .wordmark span { color: var(--muted); font-size: 0.62rem; letter-spacing: 0.35em; }
+    .navigation { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 24px; }
+    .navigation a { display: inline-flex; min-height: 44px; align-items: center; font-size: 0.85rem; }
+
+    /* HERO : LOGO, SLOGAN ET VIDÉO */
+    .hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      padding: 36px 0 54px;
+      text-align: center;
+    }
+    .hero::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 50% 25%, rgba(37, 159, 255, 0.12), transparent 55%),
+        linear-gradient(rgba(101, 223, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(101, 223, 255, 0.035) 1px, transparent 1px);
+      background-size: auto, 76px 76px, 76px 76px;
+      -webkit-mask-image: linear-gradient(#000, transparent);
+      mask-image: linear-gradient(#000, transparent);
+      content: "";
+      pointer-events: none;
+    }
+    .hero-logo { width: min(280px, 72vw); margin: 0 auto 14px; }
+    .hero-logo img { width: 100%; object-fit: contain; mix-blend-mode: screen; }
+    .hero-slogan {
+      color: var(--gold-light);
+      font-size: clamp(0.63rem, 1.8vw, 0.78rem);
+      font-weight: 600;
+      letter-spacing: 0.28em;
+    }
+    .hero h1 {
+      margin: 24px auto 28px;
+      color: var(--white);
+      font-size: clamp(2.4rem, 5.5vw, 4.4rem);
+      font-weight: 750;
+      letter-spacing: -0.045em;
+    }
+    .hero h1 span { color: var(--gold); }
+    .hero-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    .button {
+      display: inline-flex;
+      min-height: 50px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 13px 22px;
+      border: 1px solid var(--border-cyan);
+      border-radius: 12px;
+      color: var(--white);
+      background: rgba(5, 20, 35, 0.85);
+      font-size: 0.9rem;
+      font-weight: 650;
+      line-height: 1.5;
+      text-align: center;
+      transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+    }
+    .button-primary { color: #03111e; background: var(--cyan); border-color: var(--cyan); }
+    .video-shell {
+      position: relative;
+      overflow: hidden;
+      margin-top: 36px;
+      padding: 10px;
+      border: 1px solid var(--border-cyan);
+      border-radius: var(--radius);
+      background: rgba(9, 25, 43, 0.9);
+      box-shadow: 0 0 50px rgba(37, 159, 255, 0.1), var(--shadow);
+    }
+    .video-shell::before, .founder-panel::before {
+      position: absolute;
+      top: 0;
+      left: 15%;
+      width: 70%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      content: "";
+      pointer-events: none;
+    }
+    .presentation-video {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 680px;
+      border-radius: 16px;
+      background: var(--bg-deep);
+      object-fit: contain;
+    }
+    .video-caption {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 16px 12px 6px;
+      font-size: 0.8rem;
+      text-align: left;
+    }
+    .video-caption span { color: var(--muted); }
+
+    /* CATALOGUE : TROIS APPLICATIONS */
+    .section-heading { margin-bottom: 36px; text-align: center; }
+    .section-heading h2 {
+      margin-top: 12px;
+      color: var(--gold);
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      letter-spacing: -0.035em;
+    }
+    .solutions-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+    .solution-card {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: var(--radius);
+      transition: transform 200ms ease, border-color 200ms ease;
+    }
+    .solution-card.featured { border-color: var(--border-gold); }
+    .app-visual {
+      display: flex;
+      height: 224px;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+      background: #071322;
+    }
+    .app-visual img { width: 100%; height: 100%; object-fit: contain; }
+    .card-content { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 26px; }
+    .badge {
+      display: inline-flex;
+      max-width: 100%;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 17px;
+      padding: 6px 10px;
+      border: 1px solid var(--border-gold);
+      border-radius: 14px;
+      color: var(--gold-light);
+      background: rgba(200, 164, 106, 0.07);
+      font-size: 0.69rem;
+      font-weight: 650;
+      line-height: 1.5;
+    }
+    .badge::before { width: 5px; height: 5px; flex-shrink: 0; border-radius: 50%; background: currentColor; content: ""; }
+    .badge-product { color: var(--cyan); border-color: var(--border-cyan); background: rgba(101, 223, 255, 0.05); }
+    .card-content h3 { color: var(--gold-light); font-size: 1.55rem; letter-spacing: -0.035em; }
+    .card-content p { margin-top: 15px; margin-bottom: 26px; font-size: 0.94rem; }
+    .card-footer { width: 100%; margin-top: auto; }
+    .button-store { width: 100%; }
+
+    /* À PROPOS : PORTRAIT ET TEXTE OFFICIEL */
+    .founder-panel { position: relative; padding: clamp(22px, 3.5vw, 44px); border-color: var(--border-cyan); border-radius: 28px; }
+    .founder-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      align-items: start;
+      gap: clamp(28px, 4vw, 48px);
+    }
+    .founder-photo {
+      min-width: 0;
+      overflow: hidden;
+      padding: 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 22px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .founder-photo img { width: 100%; height: auto; border-radius: 15px; }
+    .founder-copy { min-width: 0; }
+    .founder-copy h2 {
+      margin-top: 12px;
+      color: var(--gold);
+      font-size: clamp(1.9rem, 3.1vw, 2.7rem);
+      font-weight: 750;
+      letter-spacing: -0.03em;
+    }
+    .founder-role { margin-top: 14px; color: var(--white); font-size: 0.71rem; letter-spacing: 0.24em; line-height: 2; text-wrap: balance; }
+    .founder-divider { width: 100%; height: 1px; margin-block: 25px; background: linear-gradient(90deg, var(--gold), transparent); }
+    .founder-description { color: var(--white); font-size: 1rem; line-height: 1.85; }
+    .founder-description p + p { margin-top: 24px; }
+    .founder-description strong, .founder-mission strong { color: var(--gold-light); font-weight: 650; }
+    .founder-mission {
+      margin-top: 28px;
+      padding: 22px 24px;
+      border: 1px solid var(--border-cyan);
+      border-left: 3px solid var(--cyan);
+      border-radius: 0 16px 16px 0;
+      color: var(--white);
+      background: rgba(7, 26, 44, 0.8);
+      font-size: 1rem;
+      line-height: 1.85;
+      scroll-margin-top: 24px;
+    }
+    .founder-promise { margin-top: 40px; padding-top: 30px; border-top: 1px solid var(--border); text-align: center; }
+    .founder-promise p { color: var(--gold-light); font-size: clamp(1.25rem, 2.4vw, 2rem); font-weight: 600; line-height: 1.6; text-wrap: balance; }
+    .founder-promise span { display: inline-block; }
+    .founder-promise .promise-final { color: var(--white); }
+
+    /* PIED DE PAGE */
+    .site-footer { padding-block: 28px; border-top: 1px solid var(--border); background: var(--bg-deep); text-align: center; }
+    .footer-copy { color: var(--muted); font-size: 0.75rem; }
+    .footer-motto { margin-top: 10px; color: var(--gold-light); font-size: 0.65rem; letter-spacing: 0.15em; }
+
+    /* INTERACTIONS ET ADAPTATION AUX ÉCRANS */
+    @media (hover: hover) {
+      .navigation a:hover { color: var(--cyan); }
+      .button:hover { transform: translateY(-2px); border-color: var(--cyan); box-shadow: 0 0 26px rgba(101, 223, 255, 0.16); }
+      .button-primary:hover { background: #a0ecff; }
+      .solution-card:hover { transform: translateY(-5px); border-color: var(--cyan); }
+    }
+    @media (max-width: 1000px) {
+      .solutions-grid { grid-template-columns: minmax(0, 1fr); max-width: 620px; margin-inline: auto; }
+      .app-visual { height: 280px; }
+      .founder-grid { grid-template-columns: minmax(0, 1fr); gap: 34px; }
+      .founder-photo { width: min(100%, 540px); margin-inline: auto; }
+      .founder-copy { width: min(100%, 720px); margin-inline: auto; }
+      .founder-copy h2 { font-size: clamp(2rem, 5vw, 3rem); }
+    }
+    @media (max-width: 640px) {
+      .container { width: calc(100% - 32px); }
+      .header-inner { flex-direction: column; justify-content: center; gap: 12px; }
+      .wordmark { text-align: center; }
+      .navigation { justify-content: center; gap: 6px 18px; }
+      .navigation a { font-size: 0.8rem; }
+      .hero { padding-top: 26px; padding-bottom: 30px; }
+      .hero-logo { width: min(235px, 70vw); }
+      .hero h1 span { display: block; }
+      .hero-actions .button { width: 100%; }
+      .video-shell { padding: 6px; border-radius: 18px; }
+      .presentation-video { border-radius: 12px; }
+      .founder-panel { padding: 20px; border-radius: 22px; }
+      .founder-role { font-size: 0.67rem; letter-spacing: 0.18em; }
+      .founder-mission { padding: 19px 18px; }
+      .founder-promise span { display: block; }
+    }
+    @media (max-width: 380px) {
+      .container { width: calc(100% - 24px); }
+      .card-content { padding: 22px 18px; }
+      .app-visual { height: 230px; }
+      .founder-panel { padding: 16px; }
+      .founder-copy h2 { font-size: 1.8rem; }
+      .hero-slogan { letter-spacing: 0.18em; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .button:hover, .solution-card:hover { transform: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="wordmark" href="#accueil" aria-label="Magic App Production — Accueil">
+        <strong>MAGIC APP</strong>
+        <span>PRODUCTION</span>
+      </a>
+      <nav class="navigation" aria-label="Navigation principale">
+        <a href="#solutions">Nos solutions</a>
+        <a href="#fondateur">À propos</a>
+        <a href="#mission">Notre mission</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenu">
+    <!-- HERO : LOGO, SLOGAN ET LECTEUR VIDÉO -->
+    <section class="hero" id="accueil" aria-labelledby="hero-title">
+      <div class="container">
+        <div class="hero-logo">
+          <img
+            src="18462_2.png"
+            alt="Logo officiel Magic App Production"
+            width="280"
+            height="280"
+            fetchpriority="high"
+          >
+        </div>
+        <p class="hero-slogan" lang="en">IDEAS THAT SOLVE LIKE MAGIC</p>
+        <h1 id="hero-title">Magic App <span>Production</span></h1>
+
+        <div class="hero-actions">
+          <a class="button button-primary" href="#solutions">Découvrir nos applications</a>
+          <a class="button" href="#fondateur">Découvrir notre vision</a>
+        </div>
+
+        <figure class="video-shell">
+          <video
+            class="presentation-video"
+            autoplay
+            loop
+            muted
+            playsinline
+            controls
+            preload="metadata"
+            aria-label="Présentation vidéo de Magic Book Powersports"
+          >
+            <source src="18358.mp4" type="video/mp4">
+            Votre navigateur ne permet pas de lire cette vidéo.
+            <a href="18358.mp4" target="_blank" rel="noopener noreferrer">Ouvrir la vidéo de présentation.</a>
+          </video>
+          <figcaption class="video-caption">
+            <strong>Magic Book Powersports</strong>
+            <span>Une création de Magic App Production</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- CATALOGUE : MAGIC BOOK, MAGIC CREATOR, MAGIC EAR -->
+    <section id="solutions" class="section" aria-labelledby="solutions-title">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow">Gamme d’applications</p>
+          <h2 id="solutions-title">Nos Solutions Innovantes</h2>
+        </div>
+
+        <div class="solutions-grid">
+          <article class="solution-card featured glass" aria-labelledby="magic-book-title">
+            <div class="app-visual">
+              <img src="17828.png" alt="Magic Book Powersports" loading="lazy" decoding="async">
+            </div>
+            <div class="card-content">
+              <span class="badge badge-product">Disponible dans le Google Play Store</span>
+              <h3 id="magic-book-title">Magic Book</h3>
+              <p>Évaluateur d'échange intelligent pour véhicules de loisirs, propulsé par l'IA. Sécurisez vos marges et optimisez vos transactions.</p>
+              <div class="card-footer">
+                <!-- Lien de recherche provisoire : remplacer par la fiche officielle. -->
+                <a
+                  class="button button-store"
+                  href="https://play.google.com/store/search?q=Magic%20Book%20Powersports&amp;c=apps&amp;hl=fr_CA"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Rechercher Magic Book Powersports sur Google Play — nouvel onglet"
+                >Voir sur Google Play</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="solution-card glass" aria-labelledby="magic-creator-title">
+            <div class="app-visual">
+              <img src="18467.png" alt="Magic Creator" loading="lazy" decoding="async">
+            </div>
+            <div class="card-content">
+              <span class="badge">En développement</span>
+              <h3 id="magic-creator-title">Magic Creator</h3>
+              <p>Un système clé en main pour bâtir une application de zéro en décrivant simplement votre projet. Vos idées transformées en code.</p>
+            </div>
+          </article>
+
+          <article class="solution-card glass" aria-labelledby="magic-ear-title">
+            <div class="app-visual">
+              <img src="18468.png" alt="Magic Ear" loading="lazy" decoding="async">
+            </div>
+            <div class="card-content">
+              <span class="badge">En développement</span>
+              <h3 id="magic-ear-title">Magic Ear</h3>
+              <p>Outils de réponses instantanées et assistant d'écoute propulsé par l'IA pour optimiser vos ventes et votre service client.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- FONDATEUR : PHOTO ET TEXTE OFFICIEL COMPLET -->
+    <section id="fondateur" class="section" aria-labelledby="fondateur-title">
+      <div class="container">
+        <div class="founder-panel glass">
+          <div class="founder-grid">
+            <figure class="founder-photo">
+              <img
+                src="18439_2.png"
+                alt="Jonathan Labelle, fondateur de Magic App Production, en costume sombre et cravate dorée, tenant un téléphone entouré d’interfaces holographiques"
+                width="1184"
+                height="1262"
+                loading="lazy"
+                decoding="async"
+              >
+            </figure>
+
+            <div class="founder-copy">
+              <p class="eyebrow">À propos</p>
+              <h2 id="fondateur-title">JONATHAN LABELLE</h2>
+              <p class="founder-role">FONDATEUR DE MAGIC APP PRODUCTION</p>
+              <div class="founder-divider" aria-hidden="true"></div>
+
+              <div class="founder-description">
+                <p>Pionnier de l’innovation technologique, il conçoit des outils SaaS et des applications mobiles sur mesure pour transformer les opérations commerciales, illustré par le succès de <strong>Magic Book Powersports</strong>.</p>
+                <p><strong>Magic App Production</strong> ne fait pas que du web : nous numérisons et optimisons vos processus d’affaires. Nous transformons vos idées en applications concrètes, en créant des interfaces intuitives et des assistants propulsés par l'IA pensés pour une efficacité absolue. De l'évaluation d'inventaire à la réponse client instantanée, nous automatisons vos ventes pour rentabiliser chaque transaction.</p>
+              </div>
+
+              <div id="mission" class="founder-mission" role="region" aria-labelledby="mission-title">
+                <p><strong id="mission-title">Notre mission :</strong> Intégrer l'agilité technologique directement dans votre quotidien pour vous positionner au sommet de votre secteur. Nous bâtissons les outils qui protègent vos marges.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="founder-promise">
+            <p>
+              <span>Des opérations complexes.</span>
+              <span>Des solutions simples.</span>
+              <span class="promise-final">Comme par magie.</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-copy">© 2026 Magic App Production. Tous droits réservés.</p>
+      <p class="footer-motto" lang="en">IDEAS THAT SOLVE LIKE MAGIC</p>
+    </div>
+  </footer>
+</body>
+</html>

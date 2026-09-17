@@ -1,0 +1,13 @@
+===================================================================================
+MAGIC BOOK POWERSPORTS (par Magic app production)
+Création originale, conception et développement par Jonathan Labelle, PDG.
+Propriété intellectuelle exclusive de Jonathan Labelle / Magic app production.
+Tous droits réservés.
+===================================================================================
+
+Le code original, les interfaces, les flux applicatifs, les configurations, les données,
+les prompts et la documentation propres à Magic Book Powersports sont confidentiels et
+réservés à Jonathan Labelle / Magic app production.
+
+Les bibliothèques tierces demeurent régies par leurs licences respectives, notamment
+Capacitor, RevenueCat, Supabase, Resend et les dépendances npm utilisées par le projet.
