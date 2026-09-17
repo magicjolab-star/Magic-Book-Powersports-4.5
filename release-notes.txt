@@ -1,0 +1,6 @@
+Magic Book Powersports - Beta 4.1
+Refonte visuelle marine, or et cyan. Nouvel embleme officiel.
+Splash video muet, transition progressive et repli en cas d'erreur video.
+Tableau de bord, creation et consultation de dossiers locaux.
+Logo Magic App Production cliquable dans le footer.
+Cette livraison d'interface ne contient pas le moteur d'estimation ni l'authentification de production.
