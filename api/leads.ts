@@ -1,4 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { buildLeadNotificationPayload, type ProspectLead } from '../src/services/leadNotification';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,7 +27,13 @@ function parseLead(body: unknown): ProspectLead | null {
   return lead;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+type ApiRequest = { method?: string; body?: unknown };
+type ApiResponse = {
+  setHeader(name: string, value: string): void;
+  status(code: number): { json(body: unknown): unknown };
+};
+
+export default async function handler(req: ApiRequest, res: ApiResponse) {
   res.setHeader('Cache-Control', 'no-store');
 
   if (req.method !== 'POST') {
