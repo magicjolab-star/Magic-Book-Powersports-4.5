@@ -1,0 +1,35 @@
+name: Resend DNS diagnostic
+
+on:
+  pull_request:
+    branches:
+      - Magic-book-powersports
+
+permissions:
+  contents: read
+
+jobs:
+  dns:
+    name: Check magic-app.ca Resend DNS
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install DNS tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dnsutils
+
+      - name: Query authoritative public DNS
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== NS ==="
+          dig +short NS magic-app.ca
+          echo "=== DKIM TXT ==="
+          dig +short TXT resend._domainkey.magic-app.ca
+          echo "=== rsend CNAME ==="
+          dig +short CNAME rsend.magic-app.ca
+          echo "=== send CNAME ==="
+          dig +short CNAME send.magic-app.ca
+          echo "=== MX ==="
+          dig +short MX magic-app.ca
