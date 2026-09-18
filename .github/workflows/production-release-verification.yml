@@ -1,0 +1,115 @@
+name: Production release verification
+
+on:
+  pull_request:
+    branches:
+      - Magic-book-powersports
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Deploy and verify production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERCEL_ORG_ID: team_iotcIMgEQ899STOO1HtZjTFK
+      VERCEL_PROJECT_ID: prj_qCtpw3kA8IiQgQUDWuIaHv94Tkgb
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Inspect production environment keys
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error             -H "Authorization: Bearer $VERCEL_TOKEN"             "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID"             | jq -r '.envs[]?.key'             | sort -u             | tee /tmp/env-keys.txt
+
+          if grep -qx 'RESEND_API_KEY' /tmp/env-keys.txt; then
+            echo "RESEND_API_KEY_PRESENT=true" >> "$GITHUB_ENV"
+            echo "RESEND_API_KEY is configured."
+          else
+            echo "RESEND_API_KEY_PRESENT=false" >> "$GITHUB_ENV"
+            echo "::warning::RESEND_API_KEY is not configured in the Vercel project."
+          fi
+
+          if grep -qx 'LEAD_FROM_EMAIL' /tmp/env-keys.txt; then
+            echo "LEAD_FROM_EMAIL is configured."
+          else
+            echo "::notice::LEAD_FROM_EMAIL is not configured; the server default will be used."
+          fi
+
+      - name: Pull production configuration
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy production
+        id: deploy
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          URL="$(vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN" | tail -n 1)"
+          if [[ "$URL" != https://* ]]; then
+            echo "::error::No production URL returned: $URL"
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Production URL: $URL"
+
+      - name: Verify public application
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="${{ steps.deploy.outputs.url }}"
+          for attempt in {1..18}; do
+            CODE="$(curl --silent --location --output /tmp/home.html --write-out "%{http_code}" "$URL/")"
+            echo "Root HTTP $CODE - attempt $attempt/18"
+            if [ "$CODE" = "200" ]; then
+              break
+            fi
+            sleep 5
+          done
+          test "$CODE" = "200" || { echo "::error::Public root did not return HTTP 200."; exit 1; }
+
+          LEAD_CODE="$(curl --silent --output /tmp/lead-get.json --write-out "%{http_code}" "$URL/api/leads")"
+          echo "GET /api/leads -> HTTP $LEAD_CODE"
+          test "$LEAD_CODE" = "405" || { echo "::error::Lead API route is not active."; cat /tmp/lead-get.json || true; exit 1; }
+
+          if grep -qi 'vercel.com/sso-api' /tmp/home.html; then
+            echo "::error::Production still redirects to Vercel Authentication."
+            exit 1
+          fi
+
+          echo "Public application and lead API route verified."
+
+      - name: Release summary
+        if: always()
+        run: |
+          {
+            echo "## Magic Book Powersports production verification"
+            echo
+            echo "- URL: ${{ steps.deploy.outputs.url || 'deployment failed' }}"
+            echo "- Resend API key configured: ${RESEND_API_KEY_PRESENT:-unknown}"
+            echo "- Commit: `$GITHUB_SHA`"
+          } >> "$GITHUB_STEP_SUMMARY"
