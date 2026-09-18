@@ -1,4 +1,4 @@
-import type { ProEntitlement } from '../types/database.ts';
+import type { ProEntitlement } from '../types/database';
 
 export type Tab = 'home' | 'evaluate' | 'history' | 'account';
 export type VehicleCategory = 'VTT' | 'Côte-à-côte' | 'Moto' | 'Motomarine' | 'Bateau';
