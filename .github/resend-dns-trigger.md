@@ -1,0 +1,1 @@
+# Resend DNS diagnostic trigger
