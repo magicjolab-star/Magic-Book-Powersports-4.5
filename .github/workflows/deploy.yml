@@ -69,11 +69,7 @@ jobs:
             "framework": null,
             "buildCommand": "npm run build",
             "outputDirectory": "dist",
-            "installCommand": "npm ci",
-            "gitRepository": {
-              "type": "github",
-              "repo": "magicjolab-star/Magic-Book-Powersports-4.5"
-            }
+            "installCommand": "npm ci"
           }
           JSON
           elif [ "$HTTP_CODE" != "200" ]; then
