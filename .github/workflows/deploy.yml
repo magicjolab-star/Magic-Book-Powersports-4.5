@@ -1,0 +1,186 @@
+name: Deploy Magic Book Powersports to Vercel
+
+on:
+  push:
+    branches:
+      - Magic-book-powersports
+  workflow_dispatch:
+
+concurrency:
+  group: magic-book-powersports-production
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  VERCEL_TEAM_ID: team_iotcIMgEQ899STOO1HtZjTFK
+  VERCEL_TEAM_SLUG: magicjolab-7521s-projects
+  VERCEL_PROJECT_NAME: magic-book-powersports-4-5
+  VERCEL_ORG_ID: team_iotcIMgEQ899STOO1HtZjTFK
+
+jobs:
+  deploy:
+    name: Build and deploy production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Validate Vercel token
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "::error::Missing GitHub secret VERCEL_TOKEN"
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error             -H "Authorization: Bearer $VERCEL_TOKEN"             "https://api.vercel.com/v2/user"             > /tmp/vercel-user.json
+
+          echo "Vercel token validated."
+
+      - name: Ensure Vercel project exists
+        id: vercel_project
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          PROJECT_URL="https://api.vercel.com/v9/projects/$VERCEL_PROJECT_NAME?teamId=$VERCEL_TEAM_ID"
+          HTTP_CODE="$(curl --silent --show-error             -o /tmp/vercel-project.json             -w "%{http_code}"             -H "Authorization: Bearer $VERCEL_TOKEN"             "$PROJECT_URL")"
+
+          if [ "$HTTP_CODE" = "404" ]; then
+            echo "Vercel project does not exist. Creating it..."
+
+            curl --fail-with-body --silent --show-error               -X POST               "https://api.vercel.com/v11/projects?teamId=$VERCEL_TEAM_ID"               -H "Authorization: Bearer $VERCEL_TOKEN"               -H "Content-Type: application/json"               --data @- > /tmp/vercel-project.json <<'JSON'
+          {
+            "name": "magic-book-powersports-4-5",
+            "framework": null,
+            "buildCommand": "npm run build",
+            "outputDirectory": "dist",
+            "installCommand": "npm ci",
+            "gitRepository": {
+              "type": "github",
+              "repo": "magicjolab-star/Magic-Book-Powersports-4.5"
+            }
+          }
+          JSON
+          elif [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Unable to read Vercel project. HTTP $HTTP_CODE"
+            cat /tmp/vercel-project.json || true
+            exit 1
+          fi
+
+          PROJECT_ID="$(jq -r '.id // empty' /tmp/vercel-project.json)"
+          if [ -z "$PROJECT_ID" ]; then
+            echo "::error::Vercel project ID missing."
+            cat /tmp/vercel-project.json
+            exit 1
+          fi
+
+          echo "VERCEL_PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+          echo "project_id=$PROJECT_ID" >> "$GITHUB_OUTPUT"
+          echo "Using Vercel project: $PROJECT_ID"
+
+      - name: Configure project and disable Vercel Authentication
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          curl --fail-with-body --silent --show-error             -X PATCH             "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_TEAM_ID"             -H "Authorization: Bearer $VERCEL_TOKEN"             -H "Content-Type: application/json"             --data @- > /tmp/vercel-project-updated.json <<'JSON'
+          {
+            "ssoProtection": null,
+            "framework": null,
+            "buildCommand": "npm run build",
+            "outputDirectory": "dist",
+            "installCommand": "npm ci"
+          }
+          JSON
+
+          jq -e '.ssoProtection == null' /tmp/vercel-project-updated.json > /dev/null
+          echo "Vercel Authentication disabled."
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel production configuration
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel pull             --yes             --environment=production             --token="$VERCEL_TOKEN"
+
+      - name: Build production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel build             --prod             --token="$VERCEL_TOKEN"
+
+      - name: Deploy production
+        id: deploy
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          DEPLOYMENT_URL="$(vercel deploy             --prebuilt             --prod             --yes             --token="$VERCEL_TOKEN" | tail -n 1)"
+
+          echo "url=$DEPLOYMENT_URL" >> "$GITHUB_OUTPUT"
+          echo "Production URL: $DEPLOYMENT_URL"
+
+      - name: Verify public HTTP 200
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          URL="${{ steps.deploy.outputs.url }}"
+
+          for attempt in {1..12}; do
+            CODE="$(curl --silent --location               --output /dev/null               --write-out "%{http_code}"               "$URL")"
+
+            echo "HTTP $CODE - attempt $attempt/12"
+
+            if [ "$CODE" = "200" ]; then
+              echo "Public deployment verified: $URL"
+              exit 0
+            fi
+
+            sleep 5
+          done
+
+          echo "::error::Deployment did not become publicly reachable with HTTP 200."
+          exit 1
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          {
+            echo "## Magic Book Powersports deployment"
+            echo ""
+            echo "- Branch: \`$GITHUB_REF_NAME\`"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Vercel project: \`$VERCEL_PROJECT_NAME\`"
+            echo "- Production URL: ${{ steps.deploy.outputs.url || 'deployment failed' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
