@@ -1,4 +1,4 @@
-import type { AppSnapshot, EvaluationInput, EvaluationResult, ProAction } from '../domain/models.ts';
+import type { AppSnapshot, EvaluationInput, EvaluationResult, ProAction } from '../domain/models';
 
 export interface MagicBookGateway {
   bootstrap(signal: AbortSignal): Promise<AppSnapshot>;
