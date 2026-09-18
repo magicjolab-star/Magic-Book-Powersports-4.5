@@ -1,0 +1,52 @@
+name: Vercel preview diagnostic
+
+on:
+  pull_request:
+    branches:
+      - Magic-book-powersports
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    name: Build Vercel preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      VERCEL_ORG_ID: team_iotcIMgEQ899STOO1HtZjTFK
+      VERCEL_PROJECT_ID: prj_qCtpw3kA8IiQgQUDWuIaHv94Tkgb
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull preview configuration
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+
+      - name: Build preview
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          vercel build --token="$VERCEL_TOKEN"
+
+      - name: Deploy preview
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          vercel deploy --prebuilt --yes --token="$VERCEL_TOKEN"
