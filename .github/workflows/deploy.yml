@@ -38,7 +38,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Typecheck
         run: npm run typecheck
@@ -101,7 +101,7 @@ jobs:
           if [ "$HTTP_CODE" = "404" ]; then
             echo "Project $VERCEL_PROJECT_NAME not found; creating it."
 
-            HTTP_CODE="$(curl --silent --show-error               --output /tmp/vercel-project.json               --write-out "%{http_code}"               --request POST               "https://api.vercel.com/v11/projects?teamId=$VERCEL_TEAM_ID"               -H "Authorization: Bearer $VERCEL_TOKEN"               -H "Content-Type: application/json"               --data '{"name":"magic-book-powersports-4-5","framework":null,"buildCommand":"npm run build","outputDirectory":"dist","installCommand":"npm ci"}')"
+            HTTP_CODE="$(curl --silent --show-error               --output /tmp/vercel-project.json               --write-out "%{http_code}"               --request POST               "https://api.vercel.com/v11/projects?teamId=$VERCEL_TEAM_ID"               -H "Authorization: Bearer $VERCEL_TOKEN"               -H "Content-Type: application/json"               --data '{"name":"magic-book-powersports-4-5","framework":null,"buildCommand":"npm run build","outputDirectory":"dist","installCommand":"npm install --no-audit --no-fund"}')"
 
             if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ]; then
               echo "::error::Vercel project creation failed. HTTP $HTTP_CODE"
