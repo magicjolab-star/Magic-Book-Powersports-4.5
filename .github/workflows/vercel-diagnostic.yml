@@ -1,0 +1,74 @@
+name: Vercel access diagnostic
+
+on:
+  pull_request:
+    branches:
+      - Magic-book-powersports
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vercel-access:
+    name: Verify Vercel credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VERCEL_TEAM_ID: team_iotcIMgEQ899STOO1HtZjTFK
+      VERCEL_PROJECT_NAME: magic-book-powersports-4-5
+    steps:
+      - name: Validate secret presence
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "::error::VERCEL_TOKEN is missing in repository Actions secrets."
+            exit 1
+          fi
+          echo "VERCEL_TOKEN is present."
+
+      - name: Validate token identity
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          CODE="$(curl --silent --show-error             --output /tmp/user.json             --write-out "%{http_code}"             -H "Authorization: Bearer $VERCEL_TOKEN"             https://api.vercel.com/v2/user)"
+          echo "Vercel /v2/user -> HTTP $CODE"
+          if [ "$CODE" != "200" ]; then
+            cat /tmp/user.json || true
+            exit 1
+          fi
+          jq '{uid,username,email}' /tmp/user.json
+
+      - name: Validate team access
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          CODE="$(curl --silent --show-error             --output /tmp/team.json             --write-out "%{http_code}"             -H "Authorization: Bearer $VERCEL_TOKEN"             "https://api.vercel.com/v2/teams/$VERCEL_TEAM_ID")"
+          echo "Vercel team -> HTTP $CODE"
+          if [ "$CODE" != "200" ]; then
+            cat /tmp/team.json || true
+            exit 1
+          fi
+          jq '{id,name,slug}' /tmp/team.json
+
+      - name: Inspect target project
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          CODE="$(curl --silent --show-error             --output /tmp/project.json             --write-out "%{http_code}"             -H "Authorization: Bearer $VERCEL_TOKEN"             "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_NAME?teamId=$VERCEL_TEAM_ID")"
+          echo "Target project lookup -> HTTP $CODE"
+          if [ "$CODE" = "200" ]; then
+            jq '{id,name,accountId,ssoProtection}' /tmp/project.json
+            exit 0
+          fi
+          if [ "$CODE" = "404" ]; then
+            echo "Target project does not exist yet; production workflow will create it."
+            exit 0
+          fi
+          cat /tmp/project.json || true
+          exit 1
