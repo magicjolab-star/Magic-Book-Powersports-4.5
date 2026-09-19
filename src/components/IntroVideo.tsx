@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   Platform,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
-const STORAGE_KEY = 'magic_book_v5_intro_seen';
+const STORAGE_KEY = 'magic_book_v51_intro_seen';
 
 async function readSeen(): Promise<boolean> {
   if (Platform.OS === 'web') {
@@ -30,7 +30,7 @@ async function writeSeen(): Promise<void> {
       (globalThis as any)?.localStorage?.setItem(STORAGE_KEY, '1');
       return;
     } catch {
-      // Fallback below for native runtimes.
+      // Native fallback below.
     }
   }
 
@@ -45,13 +45,23 @@ export default function IntroVideo({
   const [loadedPreference, setLoadedPreference] = useState(false);
   const [returningVisitor, setReturningVisitor] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const [fallbackVisible, setFallbackVisible] = useState(false);
+  const progressRef = useRef(0);
 
   const videoSource = useMemo(() => require('../../splash-video.mp4'), []);
 
   const player = useVideoPlayer(videoSource, (instance) => {
     instance.loop = false;
-    instance.muted = false;
-    instance.play();
+
+    // Mobile browsers commonly block autoplay when audio is enabled.
+    // Web starts muted so the intro always launches automatically.
+    instance.muted = Platform.OS === 'web';
+
+    try {
+      instance.play();
+    } catch {
+      // The watchdog below exposes a safe continue action if a browser blocks playback.
+    }
   });
 
   useEffect(() => {
@@ -59,6 +69,7 @@ export default function IntroVideo({
 
     void readSeen().then((seen) => {
       if (!mounted) return;
+
       setReturningVisitor(seen);
       setLoadedPreference(true);
     });
@@ -69,34 +80,59 @@ export default function IntroVideo({
   }, []);
 
   useEffect(() => {
+    if (!loadedPreference) return;
+
+    // Returning visitors always get the premium instant-skip action.
+    if (returningVisitor) {
+      setFallbackVisible(true);
+      return;
+    }
+
+    // First visit: give autoplay time to begin. If the browser still blocks it,
+    // expose a recovery CTA so the app can never be trapped on the intro screen.
+    const watchdog = setTimeout(() => {
+      const current = Number(player.currentTime || 0);
+
+      if (current <= progressRef.current + 0.05) {
+        setFallbackVisible(true);
+      }
+    }, 3500);
+
+    return () => clearTimeout(watchdog);
+  }, [loadedPreference, player, returningVisitor]);
+
+  useEffect(() => {
     if (!loadedPreference || returningVisitor || finishing) return;
 
     const timer = setInterval(() => {
       const duration = Number(player.duration || 0);
       const current = Number(player.currentTime || 0);
 
+      if (current > progressRef.current) {
+        progressRef.current = current;
+      }
+
       if (duration > 0 && current >= Math.max(duration - 0.3, 0)) {
         clearInterval(timer);
         setFinishing(true);
 
         void writeSeen().finally(() => {
-          setTimeout(onComplete, 450);
+          setTimeout(onComplete, 300);
         });
       }
-    }, 250);
+    }, 200);
 
     return () => clearInterval(timer);
   }, [finishing, loadedPreference, onComplete, player, returningVisitor]);
 
-  async function skipForReturningVisitor() {
-    if (!returningVisitor) return;
-
+  async function continueToApp() {
     try {
       player.pause();
     } catch {
-      // Safe to continue even if playback is already stopped.
+      // Playback may already be stopped.
     }
 
+    await writeSeen();
     onComplete();
   }
 
@@ -115,23 +151,23 @@ export default function IntroVideo({
         <Image
           source={require('../../footer-logo.png')}
           resizeMode="contain"
-          style={styles.logo}
+          style={styles.logo as any}
         />
         <Text style={styles.signature}>MAGIC APP PRODUCTION</Text>
       </View>
 
       <View style={styles.copy}>
-        <Text style={styles.eyebrow}>MAGIC BOOK POWERSPORTS V5.0</Text>
+        <Text style={styles.eyebrow}>MAGIC BOOK POWERSPORTS V5.1</Text>
         <Text style={styles.title}>La passion rencontre l'intelligence.</Text>
         <Text style={styles.subtitle}>
           Motoneige · VTT · Côte-à-côte · Motomarine · Moto · Marine
         </Text>
       </View>
 
-      {returningVisitor ? (
+      {fallbackVisible ? (
         <Pressable
           accessibilityRole="button"
-          onPress={skipForReturningVisitor}
+          onPress={continueToApp}
           style={({ pressed }) => [styles.skip, pressed && styles.pressed]}
         >
           <Text style={styles.skipText}>Passer à l'application ✨</Text>
@@ -212,7 +248,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: '#D4AF37',
-    backgroundColor: 'rgba(10,13,20,0.90)',
+    backgroundColor: 'rgba(10,13,20,0.92)',
   },
   skipText: {
     color: '#F5DE8B',
