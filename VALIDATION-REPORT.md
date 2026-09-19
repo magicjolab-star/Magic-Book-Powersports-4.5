@@ -16,7 +16,7 @@ Tous droits réservés.
 ✓ Vérification TypeScript stricte du pont RevenueCat
 ✓ Application automatique du kit sur un projet Magic Book hérité simulé
 ✓ Création de index-400.html sans retrait des fichiers historiques
-✓ Conservation de com.magicjolab.magicbook
+✓ Conservation de com.magicproduction.magicbook
 ✓ Version Android 4.0.0 / versionCode 40000
 ✓ targetSdk 36 / compileSdk 36 / minSdk 24
 ✓ Permission com.android.vending.BILLING
