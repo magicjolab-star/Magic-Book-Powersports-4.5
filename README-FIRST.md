@@ -58,7 +58,7 @@ Copier les noms contenus dans `.env.playstore.example` vers Vercel. Les clés se
 ## Produits Google Play / RevenueCat
 
 ```text
-Application ID : com.magicjolab.magicbook
+Application ID : com.magicproduction.magicbook
 Entitlement RevenueCat : pro
 Offering RevenueCat : magic_book_pro
 Produit Google Play : magic_book_pro_v1
