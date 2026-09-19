@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Magic Book Powersports V4.6",
+  "short_name": "Magic Book",
+  "description": "Évaluateur d'échange intelligent pour véhicules de loisirs.",
+  "lang": "fr-CA",
+  "start_url": "/?source=pwa&v=460",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#07141f",
+  "theme_color": "#0b212d",
+  "prefer_related_applications": false,
+  "categories": ["business", "utilities"],
+  "icons": [
+    {"src": "/magic-book-final-192.webp", "sizes": "192x192", "type": "image/webp", "purpose": "any"},
+    {"src": "/magic-book-final-512.webp", "sizes": "512x512", "type": "image/webp", "purpose": "any"}
+  ]
+}
