@@ -1,0 +1,115 @@
+/* Magic Book — Module 01 UX/UI refinement layer
+   Design direction: dark navy / teal + premium gold
+   Scope: visual consistency, accessibility, responsive polish only. */
+
+:root{
+  --mb-focus:rgba(243,229,171,.92);
+  --mb-focus-ring:0 0 0 3px rgba(212,175,55,.16);
+  --mb-surface-1:rgba(255,255,255,.055);
+  --mb-surface-2:rgba(255,255,255,.028);
+  --mb-border-soft:rgba(255,255,255,.105);
+  --mb-border-gold:rgba(212,175,55,.30);
+  --mb-text-secondary:#b7c6d2;
+  --mb-text-tertiary:#8fa3b2;
+}
+
+/* Global rhythm */
+body{padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+.app{isolation:isolate}
+section[id],.account-panel,.history-panel,.install-panel,.accessory-builder{scroll-margin-top:18px}
+
+/* Typography hierarchy */
+h1,h2,h3{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif}
+h2{color:var(--mb-text);letter-spacing:.01em;line-height:1.25}
+h3{line-height:1.3}
+.fine,.account-sub,.install-status,.accessory-help,.niv-note,.note{color:var(--mb-text-secondary)}
+
+/* Unified focus treatment */
+:where(a,button,input,select,[tabindex]):focus-visible{
+  outline:2px solid var(--mb-focus)!important;
+  outline-offset:2px;
+  box-shadow:var(--mb-focus-ring)!important;
+}
+
+/* Links */
+a{transition:color .16s ease,border-color .16s ease,background .16s ease,opacity .16s ease}
+.privacy-link,.account-privacy a{color:var(--mb-gold-soft)!important;text-underline-offset:3px}
+.privacy-link:hover,.account-privacy a:hover{color:#fff!important}
+
+/* Head / brand block */
+.head{position:relative}
+.head:after{content:"";display:block;width:min(180px,44vw);height:1px;margin:22px auto 0;background:linear-gradient(90deg,transparent,rgba(212,175,55,.55),transparent)}
+.pro-link{transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.pro-link:hover{transform:translateY(-1px);border-color:rgba(243,229,171,.58);background:rgba(212,175,55,.075)}
+
+/* Cards and surfaces */
+.toolbox,.history-panel,.install-panel,.account-panel,.fg,.accessory-builder-card,.results .card{
+  background:linear-gradient(180deg,var(--mb-surface-1),var(--mb-surface-2))!important;
+  border-color:var(--mb-border-soft)!important;
+}
+
+/* Form consistency */
+input,select{caret-color:var(--mb-gold-soft)}
+input::placeholder{color:#718796;opacity:1}
+select option{background:#07141f;color:#fff}
+.fg{transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}
+.fg:focus-within{border-color:rgba(212,175,55,.28)!important;background:rgba(255,255,255,.045)!important;box-shadow:inset 0 1px rgba(255,255,255,.05),0 0 0 1px rgba(212,175,55,.05)!important}
+
+/* Primary/secondary controls */
+button,.market-link,.contact-link,.pro-link{-webkit-tap-highlight-color:transparent}
+button.action,.install,.account-submit,.account-verify,.accessory-add{position:relative;overflow:hidden}
+button.action:before,.install:before,.account-submit:before,.account-verify:before,.accessory-add:before{
+  content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 18%,rgba(255,255,255,.15) 46%,transparent 72%);transform:translateX(-120%);transition:transform .42s ease
+}
+button.action:hover:before,.install:hover:before,.account-submit:hover:before,.account-verify:hover:before,.accessory-add:hover:before{transform:translateX(120%)}
+.secondary-action,.market-link,.contact-link,.action.facebook,.mini,.account-logout,.account-back,.accessory-filter-toggle{transition:transform .16s ease,border-color .16s ease,background .16s ease,color .16s ease}
+.secondary-action:hover,.market-link:hover,.contact-link:hover,.action.facebook:hover,.mini:hover,.account-logout:hover,.accessory-filter-toggle:hover{transform:translateY(-1px)}
+
+/* Account */
+.account-icon{border:1px solid rgba(212,175,55,.22)!important;background:linear-gradient(145deg,rgba(212,175,55,.18),rgba(21,92,118,.38))!important;color:var(--mb-gold-soft);box-shadow:inset 0 1px rgba(255,255,255,.08),0 10px 24px rgba(0,0,0,.2)!important}
+.account-consent input{accent-color:#d4af37}
+.account-avatar{background:linear-gradient(135deg,#d4af37,#226f81)!important;color:#07141f}
+.account-code-input{letter-spacing:.34rem!important}
+
+/* Condition selector */
+.cond{min-height:88px}
+.cond b{line-height:1.25}
+.cond small{line-height:1.4;color:var(--mb-text-secondary)}
+
+/* Results */
+.results .card{overflow:hidden;position:relative}
+.results .card:after{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,rgba(212,175,55,.18),transparent 55%);pointer-events:none}
+.price{font-variant-numeric:tabular-nums}
+
+/* Status / errors */
+.loader,.err{border-radius:14px}
+.loader{border:1px solid rgba(79,217,231,.16);background:rgba(79,217,231,.035)}
+.err{border-color:rgba(255,137,137,.28);background:rgba(255,137,137,.055)}
+
+/* Mobile refinements */
+@media(max-width:760px){
+  body{padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))}
+  .app{border-radius:18px}
+  .head:after{margin-top:18px}
+  .toolbox,.fg,.history-panel,.install-panel,.account-panel,.accessory-builder-card{border-radius:15px!important}
+  button.action,.install,.account-submit,.account-verify,.accessory-add,.action.facebook,.market-link,.contact-link{min-height:56px}
+  .niv-note{font-size:.8rem}
+}
+
+@media(max-width:390px){
+  h1{letter-spacing:.075em}
+  .version{font-size:.64rem}
+  .sub{letter-spacing:.07em}
+  .account-title-wrap{gap:9px}
+  .account-icon{width:42px;height:42px;flex-basis:42px}
+}
+
+/* Motion accessibility */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
+
+/* Print remains clean */
+@media print{
+  .head:after{display:none!important}
+}
