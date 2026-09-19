@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#020812">
+<title>Magic Book Powersports V4.6</title>
+<style>
+html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#appframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#020812;z-index:1}
+#studioIntro{position:fixed;inset:0;z-index:2147483647;background:#000;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity 1.5s ease;overflow:hidden}
+#studioIntro.fade{opacity:0;pointer-events:none}
+#studioVideo{width:100%;height:100%;display:block;object-fit:contain;background:#000}
+#startGate{position:absolute;inset:0;z-index:3;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,rgba(14,50,86,.32),rgba(0,0,0,.92) 72%);padding:28px;text-align:center}
+#startGate.show{display:flex}
+#startButton{min-width:min(86vw,360px);padding:18px 24px;border-radius:18px;border:1px solid rgba(235,199,108,.75);background:linear-gradient(115deg,#9f7424,#f1d98b 48%,#af8128);color:#07111b;font-weight:950;font-size:1rem;letter-spacing:.055em;box-shadow:0 18px 50px rgba(0,0,0,.48),0 0 34px rgba(51,195,255,.18);cursor:pointer}
+#startHint{position:absolute;bottom:max(28px,env(safe-area-inset-bottom));left:24px;right:24px;color:#dbe8f8;font-size:.8rem;line-height:1.5;opacity:.86}
+</style>
+</head>
+<body>
+<iframe id="appframe" src="/index-360.html?embedded=v46&v=460" title="Magic Book Powersports V4.6"></iframe>
+<div id="studioIntro" aria-label="Introduction Magic App Production">
+  <video id="studioVideo" playsinline preload="auto">
+    <source src="/v44-intro.mp4" type="video/mp4">
+  </video>
+  <div id="startGate">
+    <button id="startButton" type="button">▶ DÉMARRER L’EXPÉRIENCE MAGIC BOOK</button>
+    <div id="startHint">Le son original de l’introduction fait partie de la signature Magic App Production.</div>
+  </div>
+</div>
+<script>
+(()=>{
+ const intro=document.getElementById('studioIntro');
+ const video=document.getElementById('studioVideo');
+ const gate=document.getElementById('startGate');
+ const btn=document.getElementById('startButton');
+ const frame=document.getElementById('appframe');
+ let closing=false;
+ const disableInnerSplash=()=>{
+   try{
+     const d=frame.contentDocument||frame.contentWindow.document;
+     const inner=d.getElementById('magic-studio-intro');
+     const innerVideo=d.getElementById('magic-studio-intro-video');
+     if(innerVideo){innerVideo.pause();innerVideo.removeAttribute('autoplay');innerVideo.muted=true;}
+     if(inner){inner.style.display='none';inner.setAttribute('aria-hidden','true');}
+   }catch{}
+ };
+ frame.addEventListener('load',()=>{disableInnerSplash();setTimeout(disableInnerSplash,250);setTimeout(disableInnerSplash,1200);});
+ const closeIntro=()=>{
+   if(closing)return;closing=true;
+   intro.classList.add('fade');
+   setTimeout(()=>{intro.style.display='none';video.pause();},1500);
+ };
+ const playWithSound=async()=>{
+   video.currentTime=0;video.muted=false;video.volume=1;
+   try{await video.play();gate.classList.remove('show');}
+   catch{gate.classList.add('show');}
+ };
+ btn.addEventListener('click',()=>{video.currentTime=0;video.muted=false;video.volume=1;video.play().then(()=>gate.classList.remove('show')).catch(()=>{});});
+ video.addEventListener('ended',closeIntro,{once:true});
+ video.addEventListener('error',()=>setTimeout(closeIntro,1200),{once:true});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!closing&&video.paused&&!video.ended&&!gate.classList.contains('show')){video.play().catch(()=>gate.classList.add('show'));}});
+ playWithSound();
+})();
+</script>
+</body>
+</html>
