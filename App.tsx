@@ -148,7 +148,7 @@ export default function App() {
             <Image
               source={require('./footer-logo.png')}
               resizeMode="contain"
-              style={styles.logo}
+              style={styles.logo as any}
             />
 
             <Text style={styles.eyebrow}>MAGIC APP PRODUCTION</Text>
@@ -335,7 +335,7 @@ function AboutModal({
                 <Image
                   source={require('./18490.png')}
                   resizeMode="contain"
-                  style={styles.aboutImage}
+                  style={styles.aboutImage as any}
                 />
               </View>
 
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 40,
     lineHeight: 43,
-    fontWeight: '950',
+    fontWeight: '900',
     marginTop: 9,
   },
   version: {
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
   proTitle: {
     color: '#FFFFFF',
     fontSize: 24,
-    fontWeight: '950',
+    fontWeight: '900',
     marginTop: 7,
   },
   proBadge: {
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
   proBadgeText: {
     color: '#D4AF37',
     fontSize: 10,
-    fontWeight: '950',
+    fontWeight: '900',
   },
   proBadgeTextActive: {
     color: '#0A0D14',
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
   goldButtonText: {
     color: '#0A0D14',
     fontSize: 14,
-    fontWeight: '950',
+    fontWeight: '900',
   },
   secondaryButton: {
     minHeight: 50,
@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
   aboutName: {
     color: '#FFFFFF',
     fontSize: 30,
-    fontWeight: '950',
+    fontWeight: '900',
     marginTop: 9,
   },
   aboutRole: {
