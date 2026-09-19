@@ -11,16 +11,16 @@ if (production && process.env.EAS_BUILD_PLATFORM === 'ios' && !process.env.APP_I
  throw new Error('Production: provide the existing iOS bundle identifier.');
 }
 const config: ExpoConfig = {
- name:'Magic Book Powersports', slug:'magic-book-powersports-beta', version:'5.0.0',
+ name:'Magic Book Powersports', slug:'magic-book-powersports-beta', version:'5.1.0',
  orientation:'default', userInterfaceStyle:'dark', backgroundColor:'#030B17',
- icon:'./assets/brand/app-icon.png', platforms:['android','ios','web'],
- android:{package:androidPackage,versionCode,adaptiveIcon:{foregroundImage:'./assets/brand/adaptive-foreground.png',backgroundColor:'#000000'}},
+ icon:'./app-icon.png', platforms:['android','ios','web'],
+ android:{package:androidPackage,versionCode,adaptiveIcon:{foregroundImage:'./adaptive-foreground.png',backgroundColor:'#000000'}},
  ios:{supportsTablet:true,bundleIdentifier:process.env.APP_IOS_BUNDLE_ID || 'ca.magicapp.magicbook.beta'},
- web:{bundler:'metro',output:'single',favicon:'./assets/brand/favicon.png'},
+ web:{bundler:'metro',output:'single',favicon:'./favicon.png'},
  plugins:[
   ['expo-splash-screen',{image:'./assets/brand/app-icon.png',imageWidth:200,resizeMode:'contain',backgroundColor:'#030B17'}],
   ['expo-video',{supportsBackgroundPlayback:false,supportsPictureInPicture:false}],
   'expo-asset','expo-system-ui'
- ], extra:{releaseLabel:'V5.0 Production'}
+ ], extra:{releaseLabel:'V5.1 Production'}
 };
 export default config;
