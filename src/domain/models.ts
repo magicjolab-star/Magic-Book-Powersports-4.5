@@ -3,6 +3,7 @@ import type { ProEntitlement } from '../types/database';
 export type Tab = 'home' | 'evaluate' | 'history' | 'account';
 export type VehicleCategory = 'VTT' | 'Côte-à-côte' | 'Moto' | 'Motomarine' | 'Bateau';
 export type Condition = 'Excellent' | 'Bon' | 'À remettre en état';
+export type CurrencyCode = 'CAD' | 'USD' | 'EUR' | 'GBP' | 'AUD';
 export type ProAction = 'acquisition-target' | 'deal-analysis' | 'negotiation-assistant';
 
 export type VehicleCategoryInput = VehicleCategory;
@@ -21,7 +22,7 @@ export type EvaluationInput = {
 export type EvaluationResult = {
   low: number;
   high: number;
-  currency: 'CAD';
+  currency: CurrencyCode;
   explanation: string;
 };
 
