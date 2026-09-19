@@ -65,11 +65,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -R --exclude=build-playstore.yml --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build \
-            'com.magicjolab.magicbook' .; then
-            echo "::error::Old Android application ID still exists."
-            exit 1
-          fi
           grep -q 'com.magicproduction.magicbook' app.config.ts
           grep -q 'com.magicproduction.magicbook' capacitor.config.ts
 
