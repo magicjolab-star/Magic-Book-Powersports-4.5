@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#0A0D14',
     fontSize: 15,
-    fontWeight: '950',
+    fontWeight: '900',
   },
   routing: {
     color: '#777D89',
