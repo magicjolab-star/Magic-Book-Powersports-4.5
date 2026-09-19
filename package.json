@@ -1,6 +1,6 @@
 {
   "name": "magic-book-powersports-beta",
-  "version": "5.1.0",
+  "version": "6.0.0",
   "private": true,
   "main": "index.ts",
   "type": "module",
@@ -18,7 +18,8 @@
     "export:web": "expo export --platform web --output-dir dist",
     "check:assets": "node scripts/check-assets.mjs",
     "cap:add:android": "cap add android",
-    "cap:sync:android": "cap sync android"
+    "cap:sync:android": "cap sync android",
+    "play:internal": "node upload-playstore.js"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
@@ -40,7 +41,8 @@
     "react-native-svg": "15.15.4",
     "react-native-web": "~0.21.0",
     "@revenuecat/purchases-capacitor": "13.6.0",
-    "@revenuecat/purchases-capacitor-ui": "13.6.0"
+    "@revenuecat/purchases-capacitor-ui": "13.6.0",
+    "googleapis": "^144.0.0"
   },
   "devDependencies": {
     "@capacitor/assets": "3.0.5",
