@@ -1,6 +1,6 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const appId = process.env.APP_ANDROID_PACKAGE || 'com.magicjolab.magicbook';
+const appId = process.env.APP_ANDROID_PACKAGE || 'com.magicproduction.magicbook';
 
 const config: CapacitorConfig = {
   appId,
