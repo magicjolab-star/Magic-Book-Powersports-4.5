@@ -1,0 +1,179 @@
+name: Build Magic Book 5.0 Play Store
+
+on:
+  pull_request:
+    branches: [ Magic-book-powersports ]
+  push:
+    branches: [ Magic-book-powersports ]
+    paths:
+      - 'android/**'
+      - 'src/billing/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'app.config.ts'
+      - 'capacitor.config.ts'
+      - '.well-known/assetlinks.json'
+      - '.github/workflows/build-playstore.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  APP_ANDROID_PACKAGE: com.magicproduction.magicbook
+  APP_ANDROID_VERSION_CODE: '50000'
+  EAS_BUILD_PROFILE: production
+  EAS_BUILD_PLATFORM: android
+  VERSION_NAME: '5.0.0'
+  KEY_ALIAS: magicbook
+  EXPECTED_UPLOAD_SHA256: '7B:B7:D0:5C:E5:04:05:38:3F:C8:FC:D3:39:A2:18:99:50:97:21:8A:CA:9E:A9:86:8C:F2:3F:48:EC:3D:91:AE'
+
+jobs:
+  build-play:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      KEYSTORE_PASSWORD: \${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      KEY_PASSWORD: \${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android API 36
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate package migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build \
+            'com.magicjolab.magicbook' .; then
+            echo "::error::Old Android application ID still exists."
+            exit 1
+          fi
+          grep -q 'com.magicproduction.magicbook' app.config.ts
+          grep -q 'com.magicproduction.magicbook' capacitor.config.ts
+
+      - name: Build web bundle
+        run: npm run build
+
+      - name: Create Android project when absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Force API 36 and V5 identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i -E 's/compileSdkVersion = [0-9]+/compileSdkVersion = 36/' android/variables.gradle
+          sed -i -E 's/targetSdkVersion = [0-9]+/targetSdkVersion = 36/' android/variables.gradle
+          sed -i -E 's/applicationId "[^"]+"/applicationId "com.magicproduction.magicbook"/' android/app/build.gradle
+          sed -i -E 's/namespace = "[^"]+"/namespace = "com.magicproduction.magicbook"/' android/app/build.gradle
+          sed -i -E 's/versionCode [0-9]+/versionCode 50000/' android/app/build.gradle
+          sed -i -E 's/versionName "[^"]+"/versionName "5.0.0"/' android/app/build.gradle
+          sed -i '/com\.android\.billingclient:billing/d' android/app/build.gradle
+
+      - name: Restore Google Play upload key
+        shell: bash
+        env:
+          KEYSTORE_BASE64: \${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "\${KEYSTORE_BASE64:-}" ] || [ -z "\${KEYSTORE_PASSWORD:-}" ]; then
+            echo "::error::Missing ANDROID_KEYSTORE_BASE64 or ANDROID_KEYSTORE_PASSWORD."
+            exit 1
+          fi
+          KEYSTORE_FILE="$RUNNER_TEMP/magic-book-upload.keystore"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE"
+          chmod 600 "$KEYSTORE_FILE"
+          echo "KEYSTORE_FILE=$KEYSTORE_FILE" >> "$GITHUB_ENV"
+
+      - name: Verify upload certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          FP="$(keytool -list -v -keystore "$KEYSTORE_FILE" -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" | sed -n 's/.*SHA256: //p' | head -n 1)"
+          echo "Upload SHA256: $FP"
+          if [ "$FP" != "$EXPECTED_UPLOAD_SHA256" ]; then
+            echo "::error::Upload certificate fingerprint mismatch."
+            exit 1
+          fi
+
+      - name: Configure release signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> android/gradle.properties <<EOF
+          MAGIC_KEYSTORE_FILE=$KEYSTORE_FILE
+          MAGIC_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD
+          MAGIC_KEY_ALIAS=$KEY_ALIAS
+          MAGIC_KEY_PASSWORD=$KEY_PASSWORD
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          s = s.replace(
+              "android {",
+              """android {
+              signingConfigs {
+                  release {
+                      storeFile file(MAGIC_KEYSTORE_FILE)
+                      storePassword MAGIC_KEYSTORE_PASSWORD
+                      keyAlias MAGIC_KEY_ALIAS
+                      keyPassword MAGIC_KEY_PASSWORD
+                  }
+              }""",
+              1,
+          )
+          s = s.replace(
+              "release {\n            minifyEnabled",
+              "release {\n            signingConfig signingConfigs.release\n            minifyEnabled",
+              1,
+          )
+          p.write_text(s)
+          PY
+
+      - name: Build signed release AAB
+        working-directory: android
+        run: ./gradlew --no-daemon clean bundleRelease --stacktrace
+
+      - name: Verify signed AAB
+        run: jarsigner -verify -strict android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Collect release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp android/app/build/outputs/bundle/release/app-release.aab release/Magic-Book-Powersports-5.0.0-production.aab
+          sha256sum release/Magic-Book-Powersports-5.0.0-production.aab > release/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Magic-Book-Powersports-5.0.0-PlayStore
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
