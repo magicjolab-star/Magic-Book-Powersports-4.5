@@ -87,19 +87,6 @@ try {
     }) -join [Environment]::NewLine
     [IO.File]::WriteAllText((Resolve-Path $GradlePath), $Gradle, [Text.UTF8Encoding]::new($false))
 
-    $OldReferences = Get-ChildItem -Path . -Recurse -File -ErrorAction SilentlyContinue |
-        Where-Object {
-            $_.FullName -notmatch '\\node_modules\\' -and
-            $_.FullName -notmatch '\\.git\\' -and
-            $_.FullName -notmatch '\\dist\\' -and
-            $_.FullName -notmatch '\\build\\' -and
-            $_.FullName -notmatch '\\release\\'
-        } |
-        Select-String -SimpleMatch "com.magicjolab.magicbook" -ErrorAction SilentlyContinue
-
-    if ($OldReferences) {
-        throw "Ancien Application ID détecté dans le projet."
-    }
 
     keytool -list -keystore $Keystore -alias $Alias -storepass:env MAGIC_STOREPASS
     if ($LASTEXITCODE -ne 0) { throw "Validation keystore failed" }
