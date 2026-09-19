@@ -1,340 +1,703 @@
-import { useMemo, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
+  Image,
+  Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
-  TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import IntroVideo from './src/components/IntroVideo';
+import ProspectModal from './src/components/ProspectModal';
 import {
-  getBrandsByCategory,
-  type VehicleCategory,
-} from './src/data/powersportsBrands';
+  configureRevenueCat,
+  restoreProPurchases,
+  showProPaywall,
+} from './src/billing/revenuecat';
 
-const CATEGORY_OPTIONS: Array<{ id: VehicleCategory; label: string }> = [
-  { id: 'ATV_UTV', label: 'VTT / Côte-à-côte' },
-  { id: 'SNOWMOBILE', label: 'Motoneige' },
-  { id: 'WATERCRAFT', label: 'Marine / Motomarine' },
-  { id: 'MOTORCYCLE', label: 'Moto' },
-  { id: 'TRAILER', label: 'Remorque' },
+type CurrencyCode = 'CAD' | 'USD' | 'EUR' | 'GBP' | 'AUD';
+
+const CURRENCIES: Array<{ code: CurrencyCode; label: string }> = [
+  { code: 'CAD', label: 'Canada' },
+  { code: 'USD', label: 'USA' },
+  { code: 'EUR', label: 'Europe' },
+  { code: 'GBP', label: 'R.-Uni' },
+  { code: 'AUD', label: 'Australie' },
 ];
 
-const CONDITIONS = ['Excellent', 'Bon', 'À reconditionner'] as const;
-
-function apiUrl(path: string): string {
-  const origin = (process.env.EXPO_PUBLIC_API_ORIGIN || '').replace(/\/$/, '');
-  return origin ? `${origin}${path}` : path;
-}
-
 export default function App() {
-  const [category, setCategory] = useState<VehicleCategory>('ATV_UTV');
-  const brands = useMemo(() => getBrandsByCategory(category), [category]);
+  const { width } = useWindowDimensions();
 
-  const [brand, setBrand] = useState('Yamaha');
-  const [model, setModel] = useState('');
-  const [year, setYear] = useState(String(new Date().getFullYear()));
-  const [mileageHours, setMileageHours] = useState('');
-  const [condition, setCondition] = useState<(typeof CONDITIONS)[number]>('Bon');
-  const [clientName, setClientName] = useState('');
-  const [clientPhone, setClientPhone] = useState('');
-  const [clientEmail, setClientEmail] = useState('');
-  const [notes, setNotes] = useState('');
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
+  const [currency, setCurrency] = useState<CurrencyCode>('CAD');
+  const [prospectVisible, setProspectVisible] = useState(false);
+  const [aboutVisible, setAboutVisible] = useState(false);
+  const [proActive, setProActive] = useState(false);
+  const [billingReady, setBillingReady] = useState(false);
+  const [billingBusy, setBillingBusy] = useState(false);
 
-  async function submitLead() {
-    if (!clientName.trim() || !clientPhone.trim() || !clientEmail.trim()) {
-      Alert.alert('Informations requises', 'Indique le nom, le téléphone et le courriel du client.');
-      return;
-    }
-    if (!brand.trim() || !model.trim() || !year.trim()) {
-      Alert.alert('Véhicule incomplet', 'Indique la marque, le modèle et l’année.');
-      return;
-    }
+  const isNative = Capacitor.isNativePlatform();
 
-    setSending(true);
-    setSent(false);
-    try {
-      const response = await fetch(apiUrl('/api/leads'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientName,
-          clientPhone,
-          clientEmail,
-          category,
-          brand,
-          model,
-          year,
-          mileageHours,
-          condition,
-          notes,
-        }),
+  const contentWidth = useMemo(() => {
+    if (width >= 1180) return 1080;
+    if (width >= 760) return width - 64;
+    return width - 28;
+  }, [width]);
+
+  useEffect(() => {
+    if (!isNative) return;
+
+    let mounted = true;
+
+    void configureRevenueCat()
+      .then((status) => {
+        if (!mounted) return;
+        setBillingReady(true);
+        setProActive(status.active);
+      })
+      .catch((error) => {
+        console.warn('[revenuecat/bootstrap]', error);
+        if (!mounted) return;
+        setBillingReady(false);
       });
 
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(
-          body?.error === 'EMAIL_NOT_CONFIGURED'
-            ? 'Le service courriel doit être configuré sur le serveur.'
-            : 'La demande n’a pas pu être transmise.'
-        );
-      }
+    return () => {
+      mounted = false;
+    };
+  }, [isNative]);
 
-      setSent(true);
-      Alert.alert('Demande transmise', 'Le prospect a été envoyé à l’équipe des ventes Théo Récréo.');
+  async function openPro() {
+    if (!isNative) {
+      Alert.alert(
+        'Magic Book Pro',
+        'Les abonnements Pro sont disponibles dans l’application Android installée depuis Google Play.',
+      );
+      return;
+    }
+
+    if (!billingReady) {
+      Alert.alert('Magic Book Pro', 'Le service d’abonnement se prépare. Réessaie dans un instant.');
+      return;
+    }
+
+    setBillingBusy(true);
+
+    try {
+      const status = await showProPaywall();
+      setProActive(status.active);
     } catch (error) {
       Alert.alert(
-        'Transmission impossible',
-        error instanceof Error ? error.message : 'Réessaie dans quelques instants.'
+        'Magic Book Pro',
+        error instanceof Error ? error.message : 'Le paywall ne peut pas être affiché.',
       );
     } finally {
-      setSending(false);
+      setBillingBusy(false);
     }
+  }
+
+  async function restorePro() {
+    if (!isNative || !billingReady) {
+      Alert.alert(
+        'Restauration',
+        'La restauration des achats est disponible sur Android via Google Play.',
+      );
+      return;
+    }
+
+    setBillingBusy(true);
+
+    try {
+      const status = await restoreProPurchases();
+      setProActive(status.active);
+
+      Alert.alert(
+        'Restauration terminée',
+        status.active ? 'Magic Book Pro est actif.' : 'Aucun abonnement Pro actif trouvé.',
+      );
+    } catch (error) {
+      Alert.alert(
+        'Restauration impossible',
+        error instanceof Error ? error.message : 'Erreur inconnue.',
+      );
+    } finally {
+      setBillingBusy(false);
+    }
+  }
+
+  if (!introDone) {
+    return <IntroVideo onComplete={() => setIntroDone(true)} />;
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-        <View style={styles.hero}>
-          <Text style={styles.kicker}>MAGIC APP PRODUCTION</Text>
-          <Text style={styles.title}>Magic Book Powersports</Text>
-          <Text style={styles.version}>V4.6 · Bêta terrain</Text>
-          <Text style={styles.subtitle}>
-            Évaluation et acquisition de véhicules de loisirs — interface de test avant Google Play.
-          </Text>
-        </View>
+      <StatusBar barStyle="light-content" backgroundColor="#0A0D14" />
 
-        <View style={styles.panel}>
-          <Text style={styles.sectionTitle}>1. Type de véhicule</Text>
-          <View style={styles.wrap}>
-            {CATEGORY_OPTIONS.map((item) => (
-              <Pressable
-                key={item.id}
-                onPress={() => {
-                  setCategory(item.id);
-                  const first = getBrandsByCategory(item.id)[0];
-                  setBrand(first?.name || '');
-                }}
-                style={[styles.chip, category === item.id && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, category === item.id && styles.chipTextActive]}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            ))}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.page}
+      >
+        <View style={[styles.content, { width: contentWidth }]}>
+          <View style={styles.hero}>
+            <Image
+              source={require('./footer-logo.png')}
+              resizeMode="contain"
+              style={styles.logo}
+            />
+
+            <Text style={styles.eyebrow}>MAGIC APP PRODUCTION</Text>
+            <Text style={styles.title}>Magic Book Powersports</Text>
+            <Text style={styles.version}>V5.1 · Premium Pro</Text>
+
+            <Text style={styles.subtitle}>
+              L’outil intelligent pour évaluer, qualifier et convertir les opportunités
+              Powersports avec une expérience haut de gamme prête pour l’international.
+            </Text>
+
+            <View style={styles.statusRow}>
+              <StatusPill label="VERSION" value={proActive ? 'PRO' : 'GRATUITE'} />
+              <StatusPill label="DEVISE" value={currency} />
+              <StatusPill label="PLATEFORME" value={Platform.OS.toUpperCase()} />
+            </View>
           </View>
 
-          <Text style={styles.sectionTitle}>2. Marque</Text>
-          <View style={styles.wrap}>
-            {brands.map((item) => (
-              <Pressable
-                key={item.id}
-                onPress={() => setBrand(item.name === 'Autre marque...' ? '' : item.name)}
-                style={[styles.brandChip, brand === item.name && styles.brandChipActive]}
-              >
-                <Text style={[styles.brandText, brand === item.name && styles.brandTextActive]}>
-                  {item.name}
-                </Text>
-              </Pressable>
-            ))}
+          <View style={styles.panel}>
+            <Text style={styles.sectionEyebrow}>EXPANSION MONDIALE</Text>
+            <Text style={styles.sectionTitle}>Devise d’évaluation</Text>
+            <Text style={styles.body}>
+              La devise est un état d’affichage global. Les valeurs sources restent intactes
+              afin de ne jamais introduire d’arrondi dans les calculs de dépréciation,
+              plafonnement ou analyse.
+            </Text>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.currencyRow}
+            >
+              {CURRENCIES.map((item) => {
+                const active = item.code === currency;
+
+                return (
+                  <Pressable
+                    key={item.code}
+                    onPress={() => setCurrency(item.code)}
+                    style={[styles.currencyChip, active && styles.currencyChipActive]}
+                  >
+                    <Text
+                      style={[
+                        styles.currencyCode,
+                        active && styles.currencyCodeActive,
+                      ]}
+                    >
+                      {item.code}
+                    </Text>
+                    <Text style={styles.currencyLabel}>{item.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
 
-          <Field label="Marque sélectionnée" value={brand} onChangeText={setBrand} placeholder="Ex. Yamaha" />
-          <Field label="Modèle" value={model} onChangeText={setModel} placeholder="Ex. Wolverine RMAX2" />
-          <Field
-            label="Année"
-            value={year}
-            onChangeText={setYear}
-            placeholder="2026"
-            keyboardType="number-pad"
-          />
-          <Field
-            label="Kilométrage / heures"
-            value={mileageHours}
-            onChangeText={setMileageHours}
-            placeholder="Ex. 3 200 km ou 240 h"
-          />
+          <View style={styles.leadPanel}>
+            <View style={styles.leadCopy}>
+              <Text style={styles.sectionEyebrow}>ACQUISITION</Text>
+              <Text style={styles.sectionTitle}>Un client prêt à avancer?</Text>
+              <Text style={styles.body}>
+                Le formulaire reste invisible jusqu’au moment utile. Une seule action ouvre
+                la fiche prospect et la transmet directement à l’équipe de ventes.
+              </Text>
+            </View>
 
-          <Text style={styles.label}>Condition</Text>
-          <View style={styles.wrap}>
-            {CONDITIONS.map((value) => (
+            <Pressable
+              onPress={() => setProspectVisible(true)}
+              style={({ pressed }) => [styles.goldButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.goldButtonText}>Transmettre à Théo Récréo</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.proPanel}>
+            <View style={styles.proHeader}>
+              <View style={styles.proHeaderCopy}>
+                <Text style={styles.proEyebrow}>MAGIC BOOK PRO</Text>
+                <Text style={styles.proTitle}>
+                  {proActive ? 'Expérience Pro activée' : 'Débloquer toute la puissance'}
+                </Text>
+              </View>
+
+              <View style={[styles.proBadge, proActive && styles.proBadgeActive]}>
+                <Text style={[styles.proBadgeText, proActive && styles.proBadgeTextActive]}>
+                  {proActive ? 'ACTIF' : 'PRO'}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.proDescription}>
+              Mensuel et annuel via RevenueCat + Google Play. Entitlement « pro »,
+              restauration des achats et contrôle natif sécurisé.
+            </Text>
+
+            <View style={styles.features}>
+              {['Analyses avancées', 'Historique cloud', 'Outils Premium', 'Expérience complète'].map(
+                (feature) => (
+                  <View key={feature} style={styles.feature}>
+                    <Text style={styles.featureDot}>✦</Text>
+                    <Text style={styles.featureText}>{feature}</Text>
+                  </View>
+                ),
+              )}
+            </View>
+
+            <View style={styles.proActions}>
               <Pressable
-                key={value}
-                onPress={() => setCondition(value)}
-                style={[styles.chip, condition === value && styles.chipActive]}
+                disabled={billingBusy}
+                onPress={openPro}
+                style={({ pressed }) => [
+                  styles.goldButton,
+                  (pressed || billingBusy) && styles.pressed,
+                ]}
               >
-                <Text style={[styles.chipText, condition === value && styles.chipTextActive]}>
-                  {value}
+                <Text style={styles.goldButtonText}>
+                  {proActive ? 'Gérer Magic Book Pro' : 'Découvrir Magic Book Pro'}
                 </Text>
               </Pressable>
-            ))}
+
+              <Pressable
+                disabled={billingBusy}
+                onPress={restorePro}
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  (pressed || billingBusy) && styles.pressed,
+                ]}
+              >
+                <Text style={styles.secondaryButtonText}>Restaurer mes achats</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-
-        <View style={styles.panel}>
-          <Text style={styles.sectionTitle}>3. Prospect</Text>
-          <Field label="Nom" value={clientName} onChangeText={setClientName} placeholder="Nom du client" />
-          <Field
-            label="Téléphone"
-            value={clientPhone}
-            onChangeText={setClientPhone}
-            placeholder="819-000-0000"
-            keyboardType="phone-pad"
-          />
-          <Field
-            label="Courriel"
-            value={clientEmail}
-            onChangeText={setClientEmail}
-            placeholder="client@exemple.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <Text style={styles.label}>Notes / commentaires</Text>
-          <TextInput
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Accessoires, état, détails importants…"
-            placeholderTextColor="#71849A"
-            multiline
-            maxLength={2000}
-            style={[styles.input, styles.notes]}
-          />
 
           <Pressable
-            disabled={sending}
-            onPress={submitLead}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              (pressed || sending) && styles.primaryButtonPressed,
-            ]}
+            onPress={() => setAboutVisible(true)}
+            style={({ pressed }) => [styles.aboutButton, pressed && styles.pressed]}
           >
-            {sending ? (
-              <ActivityIndicator color="#061121" />
-            ) : (
-              <Text style={styles.primaryButtonText}>
-                {sent ? '✓ Prospect transmis' : 'Transmettre à Théo Récréo'}
-              </Text>
-            )}
+            <Text style={styles.aboutButtonText}>À propos de Magic App Production</Text>
           </Pressable>
 
-          <Text style={styles.routing}>
-            Ventes : theorecreo.ventes@gmail.com · CC Jonathan + Jeff
+          <Text style={styles.footer}>
+            Une création de Magic App Production · Signé JoLab
           </Text>
         </View>
-
-        <Text style={styles.footer}>Une création de Magic App Production · Signé JoLab</Text>
       </ScrollView>
+
+      <ProspectModal
+        visible={prospectVisible}
+        onClose={() => setProspectVisible(false)}
+        currency={currency}
+      />
+
+      <AboutModal visible={aboutVisible} onClose={() => setAboutVisible(false)} />
     </SafeAreaView>
   );
 }
 
-type FieldProps = {
-  label: string;
-  value: string;
-  onChangeText(value: string): void;
-  placeholder?: string;
-  keyboardType?: 'default' | 'number-pad' | 'phone-pad' | 'email-address';
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-};
-
-function Field({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  keyboardType = 'default',
-  autoCapitalize = 'sentences',
-}: FieldProps) {
+function StatusPill({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#71849A"
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        style={styles.input}
-      />
+    <View style={styles.statusPill}>
+      <Text style={styles.statusLabel}>{label}</Text>
+      <Text style={styles.statusValue}>{value}</Text>
     </View>
   );
 }
 
+function AboutModal({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose(): void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalBackdrop}>
+        <SafeAreaView style={styles.aboutSafe}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.aboutScroll}
+          >
+            <View style={styles.aboutCard}>
+              <View style={styles.aboutImageContainer}>
+                <Image
+                  source={require('./18490.png')}
+                  resizeMode="contain"
+                  style={styles.aboutImage}
+                />
+              </View>
+
+              <View style={styles.aboutContent}>
+                <Text style={styles.sectionEyebrow}>À PROPOS · MAGIC APP PRODUCTION</Text>
+                <Text style={styles.aboutName}>Jonathan Labelle</Text>
+                <Text style={styles.aboutRole}>Créateur · Technologie · Performance</Text>
+                <Text style={styles.aboutText}>
+                  Magic App Production conçoit des outils intelligents qui réunissent
+                  automatisation, expérience terrain et innovation pour transformer la vente
+                  Powersports sans sacrifier l’humain.
+                </Text>
+
+                <Pressable onPress={onClose} style={styles.secondaryButton}>
+                  <Text style={styles.secondaryButtonText}>Fermer</Text>
+                </Pressable>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#030B17' },
-  page: { padding: 18, paddingBottom: 42, gap: 16 },
+  safe: {
+    flex: 1,
+    backgroundColor: '#0A0D14',
+  },
+  page: {
+    alignItems: 'center',
+    paddingVertical: 18,
+    paddingBottom: 48,
+    backgroundColor: '#0A0D14',
+  },
+  content: {
+    maxWidth: 1080,
+    gap: 18,
+  },
   hero: {
+    padding: 28,
+    borderRadius: 28,
+    backgroundColor: '#10141D',
     borderWidth: 1,
-    borderColor: 'rgba(197,155,95,0.42)',
-    borderRadius: 24,
-    padding: 24,
-    backgroundColor: '#0B192B',
+    borderColor: 'rgba(212,175,55,0.34)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.34,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 16 },
+    elevation: 12,
   },
-  kicker: { color: '#5DE2E7', fontSize: 11, fontWeight: '800', letterSpacing: 2.2 },
-  title: { color: '#F2D792', fontSize: 30, fontWeight: '900', marginTop: 8 },
-  version: { color: '#5DE2E7', fontWeight: '800', marginTop: 6 },
-  subtitle: { color: '#C1D0DF', lineHeight: 21, marginTop: 12 },
-  panel: {
-    borderWidth: 1,
-    borderColor: 'rgba(93,226,231,0.18)',
-    borderRadius: 22,
-    padding: 18,
-    backgroundColor: '#081727',
+  logo: {
+    width: 220,
+    height: 128,
+    alignSelf: 'center',
+    marginBottom: 8,
   },
-  sectionTitle: { color: '#F2D792', fontSize: 18, fontWeight: '800', marginBottom: 12, marginTop: 4 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
-  chip: {
-    borderWidth: 1,
-    borderColor: 'rgba(193,208,223,0.24)',
-    borderRadius: 999,
+  eyebrow: {
+    color: '#D4AF37',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 2.4,
+  },
+  title: {
+    color: '#FFFFFF',
+    fontSize: 40,
+    lineHeight: 43,
+    fontWeight: '950',
+    marginTop: 9,
+  },
+  version: {
+    color: '#E8CB66',
+    fontSize: 15,
+    fontWeight: '900',
+    marginTop: 8,
+  },
+  subtitle: {
+    color: '#C9CED8',
+    fontSize: 15,
+    lineHeight: 23,
+    marginTop: 15,
+    maxWidth: 760,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 9,
+    marginTop: 22,
+  },
+  statusPill: {
+    minWidth: 110,
     paddingVertical: 9,
     paddingHorizontal: 12,
-    backgroundColor: '#061121',
-  },
-  chipActive: { borderColor: '#5DE2E7', backgroundColor: '#0B2A38' },
-  chipText: { color: '#C1D0DF', fontSize: 13 },
-  chipTextActive: { color: '#5DE2E7', fontWeight: '800' },
-  brandChip: {
-    borderWidth: 1,
-    borderColor: 'rgba(197,155,95,0.22)',
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 11,
-    backgroundColor: '#061121',
-  },
-  brandChipActive: { borderColor: '#C59B5F', backgroundColor: '#251D10' },
-  brandText: { color: '#C1D0DF', fontSize: 12 },
-  brandTextActive: { color: '#F2D792', fontWeight: '800' },
-  field: { marginBottom: 13 },
-  label: { color: '#C1D0DF', fontSize: 13, fontWeight: '700', marginBottom: 7 },
-  input: {
-    minHeight: 50,
-    borderWidth: 1,
-    borderColor: 'rgba(193,208,223,0.25)',
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    color: '#FFFFFF',
-    backgroundColor: '#020B18',
+    backgroundColor: '#090C12',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.18)',
   },
-  notes: { minHeight: 110, textAlignVertical: 'top' },
-  primaryButton: {
-    minHeight: 54,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F2D792',
+  statusLabel: {
+    color: '#737B89',
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+  },
+  statusValue: {
+    color: '#F2DA7A',
+    fontSize: 13,
+    fontWeight: '900',
+    marginTop: 3,
+  },
+  panel: {
+    padding: 22,
+    borderRadius: 24,
+    backgroundColor: '#0F131B',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  sectionEyebrow: {
+    color: '#D4AF37',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.8,
+  },
+  sectionTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+    marginTop: 6,
+  },
+  body: {
+    color: '#AEB4BF',
+    lineHeight: 21,
     marginTop: 10,
   },
-  primaryButtonPressed: { opacity: 0.75 },
-  primaryButtonText: { color: '#061121', fontSize: 16, fontWeight: '900' },
-  routing: { color: '#71849A', textAlign: 'center', fontSize: 11, marginTop: 12 },
-  footer: { color: '#8FA4B9', textAlign: 'center', fontSize: 12, marginTop: 6 },
+  currencyRow: {
+    gap: 9,
+    paddingTop: 18,
+    paddingBottom: 2,
+  },
+  currencyChip: {
+    minWidth: 96,
+    paddingVertical: 11,
+    paddingHorizontal: 13,
+    borderRadius: 14,
+    backgroundColor: '#090C12',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+  },
+  currencyChipActive: {
+    borderColor: '#D4AF37',
+    backgroundColor: '#211B09',
+  },
+  currencyCode: {
+    color: '#C7CBD3',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  currencyCodeActive: {
+    color: '#F4D969',
+  },
+  currencyLabel: {
+    color: '#737B89',
+    fontSize: 10,
+    marginTop: 3,
+  },
+  leadPanel: {
+    padding: 22,
+    borderRadius: 24,
+    backgroundColor: '#0F131B',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.18)',
+    gap: 18,
+  },
+  leadCopy: {
+    maxWidth: 760,
+  },
+  proPanel: {
+    padding: 24,
+    borderRadius: 26,
+    backgroundColor: '#171405',
+    borderWidth: 1,
+    borderColor: '#8E7420',
+  },
+  proHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 14,
+  },
+  proHeaderCopy: {
+    flex: 1,
+  },
+  proEyebrow: {
+    color: '#D4AF37',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  proTitle: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '950',
+    marginTop: 7,
+  },
+  proBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#D4AF37',
+    backgroundColor: '#0A0D14',
+  },
+  proBadgeActive: {
+    backgroundColor: '#D4AF37',
+  },
+  proBadgeText: {
+    color: '#D4AF37',
+    fontSize: 10,
+    fontWeight: '950',
+  },
+  proBadgeTextActive: {
+    color: '#0A0D14',
+  },
+  proDescription: {
+    color: '#D0CBAE',
+    lineHeight: 21,
+    marginTop: 14,
+  },
+  features: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 18,
+  },
+  feature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    minWidth: 160,
+  },
+  featureDot: {
+    color: '#D4AF37',
+  },
+  featureText: {
+    color: '#ECE5C9',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  proActions: {
+    gap: 10,
+    marginTop: 20,
+  },
+  goldButton: {
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    backgroundColor: '#D4AF37',
+  },
+  goldButtonText: {
+    color: '#0A0D14',
+    fontSize: 14,
+    fontWeight: '950',
+  },
+  secondaryButton: {
+    minHeight: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.34)',
+    backgroundColor: '#11151D',
+  },
+  secondaryButtonText: {
+    color: '#E9D47A',
+    fontWeight: '900',
+  },
+  aboutButton: {
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: '#10141D',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.25)',
+  },
+  aboutButtonText: {
+    color: '#E7D16F',
+    fontWeight: '900',
+  },
+  footer: {
+    color: '#6F7682',
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: 6,
+  },
+  pressed: {
+    opacity: 0.72,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.82)',
+  },
+  aboutSafe: {
+    flex: 1,
+  },
+  aboutScroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  aboutCard: {
+    width: '100%',
+    maxWidth: 760,
+    alignSelf: 'center',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    borderRadius: 28,
+    backgroundColor: '#0A0D14',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.34)',
+  },
+  aboutImageContainer: {
+    width: '100%',
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 22,
+    backgroundColor: '#05070B',
+  },
+  aboutImage: {
+    width: '100%',
+    aspectRatio: 0.84,
+  },
+  aboutContent: {
+    position: 'relative',
+    width: '100%',
+    paddingHorizontal: 24,
+    paddingTop: 25,
+    paddingBottom: 28,
+    backgroundColor: '#10141D',
+  },
+  aboutName: {
+    color: '#FFFFFF',
+    fontSize: 30,
+    fontWeight: '950',
+    marginTop: 9,
+  },
+  aboutRole: {
+    color: '#D4AF37',
+    fontWeight: '900',
+    marginTop: 5,
+  },
+  aboutText: {
+    color: '#C7CBD3',
+    lineHeight: 22,
+    marginTop: 16,
+    marginBottom: 22,
+  },
 });
