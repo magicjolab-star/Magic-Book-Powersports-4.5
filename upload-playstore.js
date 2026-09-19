@@ -166,6 +166,13 @@ async function uploadAab() {
       `Release assignée à la piste [${TRACK}].`,
     );
 
+    await androidpublisher.edits.validate({
+      packageName: PACKAGE_NAME,
+      editId,
+    });
+
+    console.log('Edit Google Play validé.');
+
     await androidpublisher.edits.commit({
       packageName: PACKAGE_NAME,
       editId,
