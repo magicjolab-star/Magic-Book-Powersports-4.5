@@ -1,4 +1,4 @@
-name: Build Magic Book 5.0 Play Store
+name: Build Magic Book 5.1 Play Store
 
 on:
   pull_request:
@@ -21,10 +21,10 @@ permissions:
 
 env:
   APP_ANDROID_PACKAGE: com.magicproduction.magicbook
-  APP_ANDROID_VERSION_CODE: '50000'
+  APP_ANDROID_VERSION_CODE: '51000'
   EAS_BUILD_PROFILE: production
   EAS_BUILD_PLATFORM: android
-  VERSION_NAME: '5.0.0'
+  VERSION_NAME: '5.1.0'
   KEY_ALIAS: magicbook
   EXPECTED_UPLOAD_SHA256: '7B:B7:D0:5C:E5:04:05:38:3F:C8:FC:D3:39:A2:18:99:50:97:21:8A:CA:9E:A9:86:8C:F2:3F:48:EC:3D:91:AE'
 
@@ -95,8 +95,8 @@ jobs:
           sed -i -E 's/targetSdkVersion = [0-9]+/targetSdkVersion = 36/' android/variables.gradle
           sed -i -E 's/applicationId "[^"]+"/applicationId "com.magicproduction.magicbook"/' android/app/build.gradle
           sed -i -E 's/namespace = "[^"]+"/namespace = "com.magicproduction.magicbook"/' android/app/build.gradle
-          sed -i -E 's/versionCode [0-9]+/versionCode 50000/' android/app/build.gradle
-          sed -i -E 's/versionName "[^"]+"/versionName "5.0.0"/' android/app/build.gradle
+          sed -i -E 's/versionCode [0-9]+/versionCode 51000/' android/app/build.gradle
+          sed -i -E 's/versionName "[^"]+"/versionName "5.1.0"/' android/app/build.gradle
           sed -i '/com\.android\.billingclient:billing/d' android/app/build.gradle
 
       - name: Restore Google Play upload key
@@ -172,12 +172,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          cp android/app/build/outputs/bundle/release/app-release.aab release/Magic-Book-Powersports-5.0.0-production.aab
-          sha256sum release/Magic-Book-Powersports-5.0.0-production.aab > release/SHA256SUMS.txt
+          cp android/app/build/outputs/bundle/release/app-release.aab release/Magic-Book-Powersports-5.1.0-production.aab
+          sha256sum release/Magic-Book-Powersports-5.1.0-production.aab > release/SHA256SUMS.txt
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Magic-Book-Powersports-5.0.0-PlayStore
+          name: Magic-Book-Powersports-5.1.0-PlayStore
           path: release/
           if-no-files-found: error
           retention-days: 30
