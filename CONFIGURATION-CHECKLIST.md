@@ -40,7 +40,7 @@ lead_submissions
 ## 3. Google Play Console
 
 ```text
-Application ID : com.magicjolab.magicbook
+Application ID : com.magicproduction.magicbook
 Abonnement : magic_book_pro_v1
 Plan mensuel : monthly-autorenewing
 Prix Canada : 149,99 $ CA / mois
@@ -53,7 +53,7 @@ Activer les deux plans et publier au minimum sur la piste de tests internes.
 ## 4. RevenueCat
 
 ```text
-Application Android : com.magicjolab.magicbook
+Application Android : com.magicproduction.magicbook
 Entitlement : pro
 Offering : magic_book_pro
 Package mensuel : $rc_monthly
