@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b212d">
+  <meta name="application-version" content="4.6.0">
+  <meta name="magic-book-market" content="recreational">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Magic Book">
+  <meta name="description" content="Magic Book — évaluateur d'échange intelligent pour véhicules de loisirs.">
+  <link rel="manifest" href="/manifest.webmanifest?v=460">
+  <link rel="icon" type="image/webp" sizes="192x192" href="/magic-book-final-192.webp">
+  <link rel="apple-touch-icon" href="/magic-book-final-192.webp">
+  <title>Magic Book Powersports V4.6</title>
+  <link rel="stylesheet" href="/style-330.css?v=330">
+  <link rel="stylesheet" href="/accessory-350.css?v=350">
+  <link rel="stylesheet" href="/style-352.css?v=354">
+  <link rel="stylesheet" href="/style-360.css?v=360">
+  <link rel="stylesheet" href="/style-361-ui.css?v=361">
+  <style>
+    .account-code-wrap{display:none;margin-top:2px;padding:14px;border:1px solid #ffffff18;border-radius:14px;background:#06131f99}
+    .account-code-wrap.show{display:block}.account-code-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;margin-bottom:10px}.account-code-label{font-size:.78rem;font-weight:900;color:#eaf7ff;letter-spacing:.7px}.account-code-hint{margin-top:3px;color:#9aafbf;font-size:.7rem;line-height:1.45}.account-code-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.account-code-input{min-height:56px!important;text-align:center;font-size:1.45rem!important;font-weight:950;letter-spacing:.45rem;font-variant-numeric:tabular-nums}.account-back{margin-top:9px;padding:7px 3px}.account-code-wrap button:disabled{opacity:.5}
+    #ecran-connexion{display:block!important}
+    #ecran-application{display:block!important}
+    .optional-details{margin:0 0 14px;border:1px solid var(--mb-line);border-radius:17px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));overflow:hidden}
+    .optional-details>summary{cursor:pointer;list-style:none;padding:15px 17px;color:var(--mb-gold-soft);font-weight:900;line-height:1.45;user-select:none}
+    .optional-details>summary::-webkit-details-marker{display:none}
+    .optional-details[open]>summary{border-bottom:1px solid var(--mb-line);background:rgba(212,175,55,.055)}
+    .optional-details>.fg{margin:12px!important}
+    .optional-details>.accessory-builder{margin:12px!important}
+    .video-loader-shell{display:none;margin:0!important;padding:0!important;border:0!important;background:transparent!important}
+    .video-loader-container{position:fixed;top:0;left:0;width:100vw;height:100vh;display:flex;justify-content:center;align-items:center;background-color:#050b14;z-index:9999;overflow:hidden}
+    .magic-book-video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1}
+    .loading-overlay{position:relative;z-index:2;text-align:center;padding:20px;width:min(92vw,850px)}
+    .loading-overlay h2{margin:0;color:#00e5ff;font-size:clamp(1.4rem,5vw,28px);line-height:1.35;text-shadow:2px 2px 8px rgba(0,0,0,.9)}
+    @media(max-width:560px){.account-code-row{grid-template-columns:1fr}.account-code-input{font-size:1.35rem!important}}
+    #magic-studio-intro{position:fixed;inset:0;width:100vw;height:100dvh;z-index:2147483647;background:#000;display:flex;align-items:center;justify-content:center;opacity:1;overflow:hidden;transition:opacity 1.5s ease-in-out}
+    #magic-studio-intro video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
+    #magic-studio-intro.fade-out{opacity:0;pointer-events:none}
+  </style>
+</head>
+<body>
+<div id="magic-studio-intro" aria-hidden="true">
+  <video id="magic-studio-intro-video" autoplay muted playsinline preload="auto">
+    <source src="/18559_2.mp4" type="video/mp4">
+  </video>
+</div>
+<main class="app">
+  <header class="head">
+    <img class="hero" src="/magic-book-final-512.webp" alt="Magic Book" width="512" height="512" decoding="async" fetchpriority="high">
+    <h1>MAGIC BOOK</h1>
+    <div class="sub" data-i18n="subtitle">Évaluateur d'échange intelligent pour véhicules de loisirs</div>
+    <div class="version">Version V4.6</div>
+    <a class="pro-link" href="/commercial.html" data-i18n="proLink">🏢 Professionnel? Découvrir Commercial Magic Book</a>
+    <div class="market-architecture" aria-hidden="true" data-active-market="recreational" data-automobile-enabled="false"></div>
+  </header>
+
+  <div id="ecran-connexion">
+    <section id="accountPanel" class="account-panel" aria-label="Compte Magic Book facultatif">
+      <div class="account-top">
+        <div class="account-title-wrap">
+          <div class="account-icon">🔐</div>
+          <div><h2 class="account-title">Mon Magic Book</h2><div id="accountSub" class="account-sub">Connexion facultative : utilise ton courriel seulement pour synchroniser tes évaluations entre tes appareils.</div></div>
+        </div>
+        <div id="accountBadge" class="account-badge wait">● Connexion cloud</div>
+      </div>
+      <div id="accountForm" class="account-form">
+        <div class="account-grid">
+          <div class="account-field"><label id="accountEmailLabel" for="accountEmail">Adresse courriel</label><input id="accountEmail" type="email" inputmode="email" autocomplete="email" placeholder="nom@exemple.com"></div>
+          <div class="account-field"><label id="accountTypeLabel" for="accountType">Type de compte</label><select id="accountType"><option value="particulier">Particulier</option><option value="professionnel">Professionnel</option></select></div>
+        </div>
+        <label id="accountConsent" class="account-consent" for="marketingConsent"><input id="marketingConsent" type="checkbox"><span><strong id="accountConsentText">Oui, je souhaite recevoir les promotions, nouveautés et offres de Théo Récréo par courriel. Je pourrai me désabonner en tout temps.</strong></span></label>
+        <button id="accountSubmit" class="account-submit" type="button">Recevoir mon code</button>
+        <div id="accountCodeWrap" class="account-code-wrap">
+          <div class="account-code-head"><div><div id="accountCodeLabel" class="account-code-label">Code de connexion</div><div id="accountCodeHint" class="account-code-hint">Entre le code à 6 chiffres reçu par courriel.</div></div></div>
+          <div class="account-code-row">
+            <input id="accountCode" class="account-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="123456" aria-label="Code de connexion à 6 chiffres">
+            <button id="accountVerify" class="account-verify" type="button">Me connecter</button>
+          </div>
+          <button id="accountBack" class="account-back" type="button">Changer de courriel</button>
+        </div>
+      </div>
+      <div id="accountProfile" class="account-profile">
+        <div id="accountAvatar" class="account-avatar">M</div>
+        <div class="account-profile-main"><div id="accountEmailText" class="account-email"></div><div id="accountMeta" class="account-meta"></div></div>
+        <button id="accountLogout" class="account-logout" type="button">Déconnexion</button>
+      </div>
+      <div id="accountMessage" class="account-message"></div>
+      <div id="accountPrivacyText" class="account-privacy">La connexion par courriel est facultative. Tu peux utiliser Magic Book sans créer de compte. <a href="/privacy.html">Politique de confidentialité</a></div>
+    </section>
+  </div>
+
+  <div id="ecran-application" style="display:block">
+    <div class="top-tools">
+      <div class="toolbox"><label for="language" data-i18n="language">Langue</label><select id="language"><option value="fr">Français</option><option value="en">English</option></select></div>
+      <div class="toolbox"><label data-i18n="currency">Devise</label><input value="CAD — $" disabled></div>
+    </div>
+
+    <section id="historyPanel" class="history-panel">
+      <div class="history-head"><div><h2 data-i18n="historyTitle">🕘 Dernières évaluations</h2><div class="fine" data-i18n="historyNote">Conservées sur cet appareil. Tu peux revoir ou modifier une recherche sans tout recommencer.</div></div><button id="clearHistory" class="mini secondary" type="button" data-i18n="clearHistory">Effacer</button></div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+
+    <div class="install-panel"><button id="install" class="install" type="button" data-i18n="install">📲 Installer l'application</button><div id="installStatus" class="install-status" data-i18n="installStatus">Si Chrome ne lance pas l'installation automatiquement, touche le bouton pour afficher la méthode manuelle.</div><div id="installHelp" class="help"><b data-i18n="installHelpTitle">Installation sur l'écran d'accueil :</b><div id="steps"></div></div></div>
+
+    <section id="form">
+      <div class="grid">
+        <div class="fg" id="step-marque"><label for="marque" data-i18n="brand">Marque</label><select id="marque"></select></div>
+        <div class="fg" id="step-modele" style="display:none" aria-hidden="true"><label for="modele" data-i18n="model">Modèle</label><input id="modele" placeholder="Ex: Wolverine, General, YZ125..." autocomplete="off"></div>
+      </div>
+      <div class="grid">
+        <div class="fg" id="step-annee" style="display:none" aria-hidden="true"><label for="annee" data-i18n="year">Année</label><input id="annee" type="number" inputmode="numeric" placeholder="Ex: 2024"></div>
+        <div class="fg" id="step-usage" style="display:none" aria-hidden="true"><label data-i18n="usage">Millage / utilisation</label><div class="usage-grid"><input id="millage" type="number" inputmode="numeric" placeholder="Ex: 2500"><select id="usageUnit"><option value="km">km</option><option value="h">h</option></select></div></div>
+      </div>
+
+      <div id="progressive-remainder" style="display:none" aria-hidden="true">
+        <details id="nivDetails" class="optional-details">
+          <summary id="nivSummary">➕ Ajouter le NIV (Optionnel - Pour plus de précision)</summary>
+          <div class="fg niv-card">
+            <div class="niv-label-row"><label id="nivLabel" for="niv">NIV / VIN</label><span id="nivOptional" class="optional-badge">Optionnel</span></div>
+            <input id="niv" class="niv-input" type="text" inputmode="text" maxlength="17" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ex: 5Y4AN07Y0RA123456" aria-describedby="nivNote">
+            <div id="nivNote" class="niv-note">L'ajout du NIV rendra votre estimation plus réaliste. Une mauvaise transcription manuelle de votre modèle peut donner un prix erroné à la hausse ou à la baisse.</div>
+          </div>
+        </details>
+
+        <details id="accessoryDetails" class="optional-details">
+          <summary id="accessorySummary">➕ Ajouter des accessoires (Optionnel)</summary>
+          <div class="accessory-builder">
+            <div class="accessory-builder-card">
+              <div id="accTitle" class="accessory-builder-title">AJOUT D'ACCESSOIRES</div>
+              <div class="accessory-filter-bar"><div id="accVehicleType" class="accessory-detected"></div><button id="accShowAll" class="accessory-filter-toggle" type="button">Afficher toutes les catégories</button></div>
+              <div class="accessory-step"><label id="accCategoryLabel" for="accCategory">CATÉGORIE</label><select id="accCategory"></select></div>
+              <div class="accessory-step"><label id="accBrandLabel" for="accBrand">FOURNISSEUR / MARQUE</label><select id="accBrand" disabled></select></div>
+              <div class="accessory-step"><label id="accTypeLabel" for="accType">MODÈLE / TYPE</label><select id="accType" disabled></select></div>
+              <button id="accAddBtn" class="accessory-add" type="button" disabled>AJOUTER CET ACCESSOIRE</button>
+              <div class="accessory-tags-box"><div id="accIncludedTitle" class="accessory-tags-title">Accessoires inclus dans l'évaluation :</div><div id="accTags" class="accessory-tags"></div></div>
+              <div id="accBuilderNote" class="accessory-builder-note"></div>
+              <select id="accessoires" class="accessory-source" multiple aria-hidden="true" tabindex="-1"></select>
+            </div>
+            <div class="accessory-help" data-i18n="accessoryHelp">La valeur des accessoires est dépréciée selon l'âge et la condition de la machine, puis plafonnée pour éviter de surévaluer un véhicule très équipé.</div>
+            <div id="accessoryImpact" class="accessory-impact"></div>
+          </div>
+        </details>
+
+        <div class="fg"><label for="autres" data-i18n="otherAccessories">Autres accessoires / Notes</label><input id="autres" placeholder="Ex: accessoires non listés, modifications particulières..." autocomplete="off"></div>
+        <div class="fg"><label data-i18n="condition">Condition de la machine</label><div class="conditions"><label class="cond active"><input type="radio" name="condition" value="excellent" checked><b>🌟 <span data-i18n="excellent">Excellent</span></b><small data-i18n="excellentNote">Prêt salle de montre</small></label><label class="cond"><input type="radio" name="condition" value="moyen"><b>🔧 <span data-i18n="average">Moyen</span></b><small data-i18n="averageNote">Inspection & ajustements</small></label><label class="cond"><input type="radio" name="condition" value="passable"><b>⚠️ <span data-i18n="fair">Passable</span></b><small data-i18n="fairNote">Budget à prévoir</small></label></div></div>
+        <button id="go" class="action" type="button" data-i18n="generate">Générer l'analyse du marché ⚡</button>
+      </div>
+    </section>
+
+    <div id="loader" class="loader video-loader-shell" aria-live="polite">
+      <div id="ecran-chargement" class="video-loader-container">
+        <video autoplay loop muted playsinline preload="auto" class="magic-book-video">
+          <source src="/assets/17525.mp4" type="video/mp4">
+        </video>
+        <div class="loading-overlay"><h2 data-i18n="loading">Analyse du marché québécois en cours...</h2></div>
+      </div>
+    </div>
+    <div id="err" class="err"></div>
+    <section id="results" class="results"><div id="cards"></div><div class="result-actions"><button id="printBtn" class="action print" type="button" data-i18n="print">🖨️ Imprimer mon résultat</button><button id="editBtn" class="action secondary-action" type="button" data-i18n="editResult">✏️ Modifier cette évaluation</button><button id="reset" class="action secondary-action" type="button" data-i18n="reset">Nouvelle évaluation</button></div></section>
+
+    <footer class="foot"><b>By Magic Jolab</b><div class="note"><span data-i18n="disclaimer">Estimation assistée par IA. Les montants doivent être validés par un professionnel avant une offre d'achat ou d'échange.</span><br><a class="privacy-link" href="/privacy.html" data-i18n="privacy">Politique de confidentialité</a><br><a class="privacy-link" href="https://magic-app.ca/" target="_blank" rel="noopener noreferrer">Magic Book une création de Magic App Production : magic-app.ca</a></div></footer>
+  </div>
+</main>
+<script src="/analytics.js?v=460" defer></script>
+<script src="/data-330.js?v=460" defer></script>
+<script src="/app-330.js?v=460" defer></script>
+<script src="/accessory-350.js?v=460" defer></script>
+<script src="/auth-352.js?v=460" defer></script>
+<script src="/premium-360.js?v=460" defer></script>
+<script src="/flow-361.js?v=460" defer></script>
+<script src="/optional-access-365.js?v=460" defer></script>
+<script>
+document.addEventListener("DOMContentLoaded",function(){
+  const intro=document.getElementById("magic-studio-intro");
+  const video=document.getElementById("magic-studio-intro-video");
+  if(!intro)return;
+  if(video){
+    video.currentTime=0;
+    const playPromise=video.play();
+    if(playPromise!==undefined){playPromise.catch(function(){});}
+  }
+  setTimeout(function(){intro.classList.add("fade-out");},4000);
+  setTimeout(function(){
+    intro.style.display="none";
+    if(video){video.pause();}
+  },5500);
+});
+</script>
+</body>
+</html>
