@@ -42,7 +42,7 @@
     "react-native-web": "~0.21.0",
     "@revenuecat/purchases-capacitor": "13.6.0",
     "@revenuecat/purchases-capacitor-ui": "13.6.0",
-    "googleapis": "^144.0.0"
+    "googleapis": "^181.0.0"
   },
   "devDependencies": {
     "@capacitor/assets": "3.0.5",
