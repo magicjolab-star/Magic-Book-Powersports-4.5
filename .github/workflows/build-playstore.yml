@@ -317,13 +317,13 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Magic Book Powersports V6.0 Build Certification"
-            echo
-            echo "- Branch: `$GITHUB_REF_NAME`"
-            echo "- Commit: `$GITHUB_SHA`"
-            echo "- Version: `6.0.0 (60000)`"
-            echo "- Application ID: `${CERT_APP_ID:-not-certified}`"
-            echo "- Target SDK: `${CERT_TARGET_SDK:-not-certified}`"
-            echo "- jarsigner -verify -strict: `${CERT_JARSIGNER:-not-certified}`"
-            echo "- Artifact: `Magic-Book-Powersports-6.0.0-production.aab`"
+            printf '%s\n' '## Magic Book Powersports V6.0 Build Certification'
+            printf '\n'
+            printf '%s\n' "- Branch: $GITHUB_REF_NAME"
+            printf '%s\n' "- Commit: $GITHUB_SHA"
+            printf '%s\n' '- Version: 6.0.0 (60000)'
+            printf '%s\n' "- Application ID: ${CERT_APP_ID:-not-certified}"
+            printf '%s\n' "- Target SDK: ${CERT_TARGET_SDK:-not-certified}"
+            printf '%s\n' "- jarsigner -verify -strict: ${CERT_JARSIGNER:-not-certified}"
+            printf '%s\n' '- Artifact: Magic-Book-Powersports-6.0.0-production.aab'
           } >> "$GITHUB_STEP_SUMMARY"
