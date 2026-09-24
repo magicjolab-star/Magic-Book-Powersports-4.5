@@ -1,50 +1,67 @@
-name: Build Magic Book 5.1 Play Store
+name: Build Magic Book V6.0 Play Store
 
 on:
-  pull_request:
-    branches: [ Magic-book-powersports ]
   push:
-    branches: [ Magic-book-powersports ]
+    branches:
+      - v6-golden-master-v460
     paths:
-      - 'android/**'
+      - 'v6-golden-master/**'
       - 'src/billing/**'
       - 'package.json'
       - 'package-lock.json'
-      - 'app.config.ts'
       - 'capacitor.config.ts'
       - '.well-known/assetlinks.json'
+      - 'upload-playstore.js'
       - '.github/workflows/build-playstore.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: magic-book-v6-playstore-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   APP_ANDROID_PACKAGE: com.magicproduction.magicbook
-  APP_ANDROID_VERSION_CODE: '51000'
-  EAS_BUILD_PROFILE: production
-  EAS_BUILD_PLATFORM: android
-  VERSION_NAME: '5.1.0'
+  APP_ANDROID_VERSION_CODE: '60000'
+  VERSION_NAME: '6.0.0'
   KEY_ALIAS: magicbook
   EXPECTED_UPLOAD_SHA256: '7B:B7:D0:5C:E5:04:05:38:3F:C8:FC:D3:39:A2:18:99:50:97:21:8A:CA:9E:A9:86:8C:F2:3F:48:EC:3D:91:AE'
+  V6_SOURCE_DIR: v6-golden-master
 
 jobs:
   build-play:
+    name: Build, sign and validate V6 AAB
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     env:
-      KEYSTORE_PASSWORD: \${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-      KEY_PASSWORD: \${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+      KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout V6 Golden Master
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v5
+      - name: Validate branch and V6 identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "v6-golden-master-v460"
+          grep -q '"version": "6.0.0"' package.json
+          grep -q "com.magicproduction.magicbook" capacitor.config.ts
+          if grep -R --line-number --fixed-strings 'com.magicjolab.magicbook'             --exclude-dir=.git             --exclude-dir=node_modules             --exclude-dir=dist             --exclude-dir=release             .; then
+            echo "::error::Legacy application ID detected."
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
 
-      - uses: actions/setup-java@v5
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
@@ -56,20 +73,56 @@ jobs:
           export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           export ANDROID_SDK_ROOT="$ANDROID_HOME"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"             'platforms;android-36'             'build-tools;36.0.0'             'platform-tools'
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Validate package migration
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'com.magicproduction.magicbook' app.config.ts
-          grep -q 'com.magicproduction.magicbook' capacitor.config.ts
+          npm install --no-audit --no-fund
 
-      - name: Build web bundle
-        run: npm run build
+      - name: Validate RevenueCat 13.6.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const p=require('./package.json');
+          if(p.dependencies['@revenuecat/purchases-capacitor']!=='13.6.0') process.exit(1);
+          if(p.dependencies['@revenuecat/purchases-capacitor-ui']!=='13.6.0') process.exit(1);
+          NODE
+
+      - name: Validate V6 JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in             "$V6_SOURCE_DIR/app-330.js"             "$V6_SOURCE_DIR/auth-352.js"             "$V6_SOURCE_DIR/premium-360.js"             "$V6_SOURCE_DIR/flow-core-361.js"             "$V6_SOURCE_DIR/flow-361.js"; do
+            node --check "$file"
+          done
+
+      - name: Assemble Golden Master webDist
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          mkdir -p dist/assets
+          cp -a "$V6_SOURCE_DIR"/. dist/
+          cp "$V6_SOURCE_DIR/index-360.html" dist/index.html
+
+          for asset in footer-logo.png app-icon.png favicon.png; do
+            if [ -f "$asset" ] && [ ! -f "dist/$asset" ]; then
+              cp "$asset" "dist/$asset"
+            fi
+          done
+
+          if [ -f splash-video.mp4 ]; then
+            [ -f dist/18559_2.mp4 ] || cp splash-video.mp4 dist/18559_2.mp4
+            [ -f dist/assets/17525.mp4 ] || cp splash-video.mp4 dist/assets/17525.mp4
+            [ -f dist/v44-intro.mp4 ] || cp splash-video.mp4 dist/v44-intro.mp4
+          fi
+
+          test -f dist/index.html
+          test -f dist/index-360.html
+          test -f dist/premium-360.js
 
       - name: Create Android project when absent
         shell: bash
@@ -82,28 +135,53 @@ jobs:
       - name: Sync Capacitor Android
         run: npx cap sync android
 
-      - name: Force API 36 and V5 identity
+      - name: Force API 36 and V6 identity
         shell: bash
         run: |
           set -euo pipefail
+
           sed -i -E 's/compileSdkVersion = [0-9]+/compileSdkVersion = 36/' android/variables.gradle
           sed -i -E 's/targetSdkVersion = [0-9]+/targetSdkVersion = 36/' android/variables.gradle
+
           sed -i -E 's/applicationId "[^"]+"/applicationId "com.magicproduction.magicbook"/' android/app/build.gradle
           sed -i -E 's/namespace = "[^"]+"/namespace = "com.magicproduction.magicbook"/' android/app/build.gradle
-          sed -i -E 's/versionCode [0-9]+/versionCode 51000/' android/app/build.gradle
-          sed -i -E 's/versionName "[^"]+"/versionName "5.1.0"/' android/app/build.gradle
+          sed -i -E 's/namespace "[^"]+"/namespace "com.magicproduction.magicbook"/' android/app/build.gradle
+          sed -i -E 's/versionCode [0-9]+/versionCode 60000/' android/app/build.gradle
+          sed -i -E 's/versionName "[^"]+"/versionName "6.0.0"/' android/app/build.gradle
+
           sed -i '/com\.android\.billingclient:billing/d' android/app/build.gradle
+
+          find android/app/src -type f \( -name '*.java' -o -name '*.kt' -o -name '*.xml' \) -print0 |
+            xargs -0 -r sed -i 's/com\.magicjolab\.magicbook/com.magicproduction.magicbook/g'
+
+      - name: Certify Application ID and target API
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Eq 'applicationId[[:space:]]+"com\.magicproduction\.magicbook"' android/app/build.gradle
+          grep -Eq 'compileSdkVersion[[:space:]]*=[[:space:]]*36' android/variables.gradle
+          grep -Eq 'targetSdkVersion[[:space:]]*=[[:space:]]*36' android/variables.gradle
+
+          if grep -R --line-number --fixed-strings 'com.magicjolab.magicbook' android; then
+            echo "::error::Legacy Android ID remains after sync."
+            exit 1
+          fi
+
+          echo "CERT_APP_ID=com.magicproduction.magicbook" >> "$GITHUB_ENV"
+          echo "CERT_TARGET_SDK=36" >> "$GITHUB_ENV"
 
       - name: Restore Google Play upload key
         shell: bash
         env:
-          KEYSTORE_BASE64: \${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
-          if [ -z "\${KEYSTORE_BASE64:-}" ] || [ -z "\${KEYSTORE_PASSWORD:-}" ]; then
-            echo "::error::Missing ANDROID_KEYSTORE_BASE64 or ANDROID_KEYSTORE_PASSWORD."
+
+          if [ -z "${KEYSTORE_BASE64:-}" ] ||              [ -z "${KEYSTORE_PASSWORD:-}" ]; then
+            echo "::error::Missing signing secrets."
             exit 1
           fi
+
           KEYSTORE_FILE="$RUNNER_TEMP/magic-book-upload.keystore"
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE"
           chmod 600 "$KEYSTORE_FILE"
@@ -113,30 +191,40 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          FP="$(keytool -list -v -keystore "$KEYSTORE_FILE" -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" | sed -n 's/.*SHA256: //p' | head -n 1)"
+
+          FP="$(keytool -list -v             -keystore "$KEYSTORE_FILE"             -alias "$KEY_ALIAS"             -storepass "$KEYSTORE_PASSWORD" |
+            sed -n 's/.*SHA256: //p' |
+            head -n 1)"
+
           echo "Upload SHA256: $FP"
+
           if [ "$FP" != "$EXPECTED_UPLOAD_SHA256" ]; then
             echo "::error::Upload certificate fingerprint mismatch."
             exit 1
           fi
 
-      - name: Configure release signing
+      - name: Configure Gradle release signing
         shell: bash
         run: |
           set -euo pipefail
+
           cat >> android/gradle.properties <<EOF
           MAGIC_KEYSTORE_FILE=$KEYSTORE_FILE
           MAGIC_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD
           MAGIC_KEY_ALIAS=$KEY_ALIAS
           MAGIC_KEY_PASSWORD=$KEY_PASSWORD
           EOF
+
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("android/app/build.gradle")
-          s = p.read_text()
-          s = s.replace(
-              "android {",
-              """android {
+
+          path = Path("android/app/build.gradle")
+          source = path.read_text()
+
+          if "signingConfigs {" not in source:
+              source = source.replace(
+                  "android {",
+                  """android {
               signingConfigs {
                   release {
                       storeFile file(MAGIC_KEYSTORE_FILE)
@@ -145,34 +233,91 @@ jobs:
                       keyPassword MAGIC_KEY_PASSWORD
                   }
               }""",
-              1,
-          )
-          s = s.replace(
-              "release {\n            minifyEnabled",
-              "release {\n            signingConfig signingConfigs.release\n            minifyEnabled",
-              1,
-          )
-          p.write_text(s)
+                  1,
+              )
+
+          if "signingConfig signingConfigs.release" not in source:
+              source = source.replace(
+                  "release {\n            minifyEnabled",
+                  "release {\n            signingConfig signingConfigs.release\n            minifyEnabled",
+                  1,
+              )
+
+          path.write_text(source)
           PY
 
-      - name: Build signed release AAB
+      - name: bundleRelease
         working-directory: android
-        run: ./gradlew --no-daemon clean bundleRelease --stacktrace
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon clean bundleRelease --stacktrace
 
-      - name: Verify signed AAB
-        run: jarsigner -verify -strict android/app/build/outputs/bundle/release/app-release.aab
+      - name: Verify signed AAB cryptographically
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB"
+          jarsigner -verify -strict -certs "$AAB"
+          echo "CERT_JARSIGNER=PASS" >> "$GITHUB_ENV"
 
-      - name: Collect release
+      - name: Collect V6 release artifact
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p release
-          cp android/app/build/outputs/bundle/release/app-release.aab release/Magic-Book-Powersports-5.1.0-production.aab
-          sha256sum release/Magic-Book-Powersports-5.1.0-production.aab > release/SHA256SUMS.txt
+          cp android/app/build/outputs/bundle/release/app-release.aab             release/Magic-Book-Powersports-6.0.0-production.aab
 
-      - uses: actions/upload-artifact@v4
+          sha256sum             release/Magic-Book-Powersports-6.0.0-production.aab             > release/SHA256SUMS.txt
+
+          cat > release/BUILD-CERTIFICATION.txt <<EOF
+          BUILD_OK=true
+          VERSION_NAME=6.0.0
+          VERSION_CODE=60000
+          APPLICATION_ID=$CERT_APP_ID
+          TARGET_SDK=$CERT_TARGET_SDK
+          BUNDLE_RELEASE=PASS
+          JARSIGNER_STRICT=$CERT_JARSIGNER
+          ARTIFACT=Magic-Book-Powersports-6.0.0-production.aab
+          COMMIT=$GITHUB_SHA
+          BRANCH=$GITHUB_REF_NAME
+          EOF
+
+          cat release/BUILD-CERTIFICATION.txt
+
+      - name: Upload certified V6 artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: Magic-Book-Powersports-5.1.0-PlayStore
-          path: release/
+          name: Magic-Book-Powersports-6.0.0-PlayStore
+          path: |
+            release/Magic-Book-Powersports-6.0.0-production.aab
+            release/SHA256SUMS.txt
+            release/BUILD-CERTIFICATION.txt
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish to Google Play Internal when credentials exist
+        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' || secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 != '' }}
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 }}
+          GOOGLE_PLAY_TRACK: internal
+          GOOGLE_PLAY_RELEASE_NAME: V6.0.0 Golden Master
+        run: npm run play:internal
+
+      - name: Build certification summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Magic Book Powersports V6.0 Build Certification"
+            echo
+            echo "- Branch: `$GITHUB_REF_NAME`"
+            echo "- Commit: `$GITHUB_SHA`"
+            echo "- Version: `6.0.0 (60000)`"
+            echo "- Application ID: `${CERT_APP_ID:-not-certified}`"
+            echo "- Target SDK: `${CERT_TARGET_SDK:-not-certified}`"
+            echo "- jarsigner -verify -strict: `${CERT_JARSIGNER:-not-certified}`"
+            echo "- Artifact: `Magic-Book-Powersports-6.0.0-production.aab`"
+          } >> "$GITHUB_STEP_SUMMARY"
