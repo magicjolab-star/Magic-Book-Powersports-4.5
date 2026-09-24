@@ -50,7 +50,7 @@ jobs:
           test "$GITHUB_REF_NAME" = "v6-golden-master-v460"
           grep -q '"version": "6.0.0"' package.json
           grep -q "com.magicproduction.magicbook" capacitor.config.ts
-          if grep -R --line-number --fixed-strings 'com.magicjolab.magicbook'             --exclude-dir=.git             --exclude-dir=node_modules             --exclude-dir=dist             --exclude-dir=release             .; then
+          if grep -R --line-number --fixed-strings 'com.magicjolab.magicbook'             --exclude-dir=.git             --exclude-dir=.github             --exclude-dir=node_modules             --exclude-dir=dist             --exclude-dir=release             .; then
             echo "::error::Legacy application ID detected."
             exit 1
           fi
