@@ -89,6 +89,7 @@ try {
 
     $OldReferences = Get-ChildItem -Path . -Recurse -File -ErrorAction SilentlyContinue |
         Where-Object {
+            $_.Name -ne "build-playstore.ps1" -and
             $_.FullName -notmatch '\\node_modules\\' -and
             $_.FullName -notmatch '\\.git\\' -and
             $_.FullName -notmatch '\\dist\\' -and
