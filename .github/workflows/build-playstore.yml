@@ -298,6 +298,7 @@ jobs:
           retention-days: 30
 
       - name: Publish to Google Play Internal when credentials exist
+        if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 != '' }}
         shell: bash
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
