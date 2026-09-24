@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   Platform,
@@ -11,6 +11,9 @@ import {
 import { VideoView, useVideoPlayer } from 'expo-video';
 
 const STORAGE_KEY = 'magic_book_v5_intro_seen';
+// Filet de sécurité : l'intro ne doit jamais bloquer l'accès à l'application,
+// même si la détection de fin de lecture échoue sur une plateforme.
+const INTRO_HARD_TIMEOUT_MS = 20000;
 
 async function readSeen(): Promise<boolean> {
   if (Platform.OS === 'web') {
@@ -45,14 +48,37 @@ export default function IntroVideo({
   const [loadedPreference, setLoadedPreference] = useState(false);
   const [returningVisitor, setReturningVisitor] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const finishingRef = useRef(false);
 
   const videoSource = useMemo(() => require('../../splash-video.mp4'), []);
 
   const player = useVideoPlayer(videoSource, (instance) => {
     instance.loop = false;
-    instance.muted = false;
-    instance.play();
+    // Les navigateurs mobiles bloquent l'autoplay avec son : lecture muette
+    // pour un démarrage garanti partout, puis fin détectée ci-dessous.
+    instance.muted = true;
+    try {
+      instance.play();
+    } catch {
+      // Le démarrage sera complété via l'interaction utilisateur (bouton).
+    }
   });
+
+  const finish = useCallback(() => {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    setFinishing(true);
+
+    try {
+      player.pause();
+    } catch {
+      // La lecture est peut-être déjà arrêtée.
+    }
+
+    void writeSeen().finally(() => {
+      setTimeout(onComplete, 450);
+    });
+  }, [onComplete, player]);
 
   useEffect(() => {
     let mounted = true;
@@ -68,6 +94,29 @@ export default function IntroVideo({
     };
   }, []);
 
+  // Détection native de fin de lecture (fiable sur web et natif).
+  useEffect(() => {
+    const subscription = player.addListener('playToEnd', () => {
+      finish();
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [finish, player]);
+
+  // Filet de sécurité : quoi qu'il arrive, l'intro se termine.
+  useEffect(() => {
+    if (!loadedPreference || returningVisitor) return;
+
+    const timeout = setTimeout(() => {
+      finish();
+    }, INTRO_HARD_TIMEOUT_MS);
+
+    return () => clearTimeout(timeout);
+  }, [finish, loadedPreference, returningVisitor]);
+
+  // Repli : détection par progression temporelle.
   useEffect(() => {
     if (!loadedPreference || returningVisitor || finishing) return;
 
@@ -77,27 +126,21 @@ export default function IntroVideo({
 
       if (duration > 0 && current >= Math.max(duration - 0.3, 0)) {
         clearInterval(timer);
-        setFinishing(true);
-
-        void writeSeen().finally(() => {
-          setTimeout(onComplete, 450);
-        });
+        finish();
       }
     }, 250);
 
     return () => clearInterval(timer);
-  }, [finishing, loadedPreference, onComplete, player, returningVisitor]);
+  }, [finish, finishing, loadedPreference, player, returningVisitor]);
 
-  async function skipForReturningVisitor() {
-    if (!returningVisitor) return;
-
+  function skipIntro() {
     try {
       player.pause();
     } catch {
       // Safe to continue even if playback is already stopped.
     }
 
-    onComplete();
+    finish();
   }
 
   return (
@@ -131,15 +174,19 @@ export default function IntroVideo({
       {returningVisitor ? (
         <Pressable
           accessibilityRole="button"
-          onPress={skipForReturningVisitor}
+          onPress={skipIntro}
           style={({ pressed }) => [styles.skip, pressed && styles.pressed]}
         >
           <Text style={styles.skipText}>Passer à l'application ✨</Text>
         </Pressable>
       ) : (
-        <View style={styles.firstVisitBadge}>
-          <Text style={styles.firstVisitText}>Première découverte · lecture complète</Text>
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={skipIntro}
+          style={({ pressed }) => [styles.firstVisitBadge, pressed && styles.pressed]}
+        >
+          <Text style={styles.firstVisitText}>Passer l'intro →</Text>
+        </Pressable>
       )}
     </View>
   );
