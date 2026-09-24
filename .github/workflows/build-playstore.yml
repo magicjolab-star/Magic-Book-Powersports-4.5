@@ -298,13 +298,19 @@ jobs:
           retention-days: 30
 
       - name: Publish to Google Play Internal when credentials exist
-        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' || secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 != '' }}
+        shell: bash
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 }}
           GOOGLE_PLAY_TRACK: internal
           GOOGLE_PLAY_RELEASE_NAME: V6.0.0 Golden Master
-        run: npm run play:internal
+        run: |
+          set -euo pipefail
+          if [ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:-}" ] || [ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64:-}" ]; then
+            npm run play:internal
+          else
+            echo "Google Play service-account secret not configured; certified AAB artifact remains available for Internal testing."
+          fi
 
       - name: Build certification summary
         if: always()
