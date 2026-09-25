@@ -1,6 +1,1 @@
-{
-  "framework": null,
-  "installCommand": "npm install --no-audit --no-fund",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist"
-}
+{"buildCommand":"rm -rf dist && mkdir -p dist && cp -a v6-golden-master/. dist/ && cp v6-golden-master/index-360.html dist/index.html","framework":null,"installCommand":"echo 'static golden master, no install needed'","outputDirectory":"dist"}
