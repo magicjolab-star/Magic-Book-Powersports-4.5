@@ -74,7 +74,7 @@ const particles=[
 const overlay=document.createElement('div');
 overlay.id='v44-studio-intro';
 overlay.innerHTML=`
-  <video id="v44-studio-video" playsinline preload="auto"><source src="/v44-intro.mp4" type="video/mp4"></video>
+  <video id="v44-studio-video" playsinline preload="auto"><source src="https://cdn.creativeclaw.co/u/65c72a8e/videos/afb6505f-6c19-44f0-82ee-5ed811562045.mp4" type="video/mp4"></video>
   <div id="v44-sound-gate">
     <div id="v44-sound-panel">
       <strong>MAGIC APP PRODUCTION</strong>
