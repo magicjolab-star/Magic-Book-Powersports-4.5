@@ -45,7 +45,7 @@
 <body>
 <div id="magic-studio-intro" aria-hidden="true">
   <video id="magic-studio-intro-video" autoplay muted playsinline preload="auto">
-    <source src="/18559_2.mp4" type="video/mp4">
+    <source src="https://cdn.creativeclaw.co/u/65c72a8e/videos/afb6505f-6c19-44f0-82ee-5ed811562045.mp4" type="video/mp4">
   </video>
 </div>
 <main class="app">
@@ -183,11 +183,21 @@ document.addEventListener("DOMContentLoaded",function(){
     const playPromise=video.play();
     if(playPromise!==undefined){playPromise.catch(function(){});}
   }
-  setTimeout(function(){intro.classList.add("fade-out");},4000);
-  setTimeout(function(){
-    intro.style.display="none";
-    if(video){video.pause();}
-  },5500);
+  let introClosed=false;
+  function closeIntro(){
+    if(introClosed)return;
+    introClosed=true;
+    intro.classList.add("fade-out");
+    setTimeout(function(){
+      intro.style.display="none";
+      if(video){video.pause();}
+    },1500);
+  }
+  if(video){
+    video.addEventListener("ended",closeIntro,{once:true});
+    video.addEventListener("error",function(){setTimeout(closeIntro,300);},{once:true});
+  }
+  setTimeout(closeIntro,12500);
 });
 </script>
 </body>
